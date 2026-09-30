@@ -1428,7 +1428,7 @@ function renderRecords(){
 }
 
 /* ---------- test + results events ---------- */
-$('startTestBtn').onclick = openTest;
+$('startTestBtn').onclick = startTestFlow;
 $('testClose').onclick = closeTest;
 $('testQuit').onclick = closeTest;
 $('testBegin').onclick = beginTest;
@@ -1487,6 +1487,23 @@ function googleSignInThenSubmit(){
     client.requestAccessToken();
   });
 }
+// "Start 10-question test": sign in with Google first (if configured and not
+// already signed in), then open the test. Falls back to opening the test if
+// no clientId is set or the Google library cannot load.
+function startTestFlow(){
+  if(!SHEET_SUBMIT.clientId || gsiToken){ openTest(); return; }
+  loadGsi(()=>{
+    if(!(window.google && google.accounts && google.accounts.oauth2)){ openTest(); return; }
+    const client = google.accounts.oauth2.initTokenClient({
+      client_id: SHEET_SUBMIT.clientId,
+      scope: 'openid email profile',
+      prompt: 'select_account',   // always show the Google account chooser
+      callback: resp=>{ gsiToken = resp.access_token || ''; openTest(); },
+      error_callback: err=>{ toast('Google sign-in cancelled' + (err && err.type ? ' (' + err.type + ')' : '')); }
+    });
+    client.requestAccessToken();
+  });
+}
 function submitToSheet(){
   if(!test || test.score == null) return;
   const payload = {
@@ -1524,7 +1541,11 @@ function submitToSheet(){
 if(SHEET_SUBMIT.url){
   const sb = $('sheetSubmit');
   sb.style.display = '';
-  sb.onclick = ()=> SHEET_SUBMIT.clientId ? googleSignInThenSubmit() : submitToSheet();
+  sb.onclick = ()=>{
+    if(gsiToken){ submitToSheet(); return; }                 // already signed in at test start
+    if(SHEET_SUBMIT.clientId){ googleSignInThenSubmit(); }   // otherwise sign in, then submit
+    else { submitToSheet(); }
+  };
 }
 
 /* ---------- boot ---------- */

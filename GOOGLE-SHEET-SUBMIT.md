@@ -198,7 +198,29 @@ function submitToSheet(){
 }
 // Wire the button (place with the other test/result events)
 $('sheetSubmit').onclick = ()=> SHEET_SUBMIT.clientId ? googleSignInThenSubmit() : submitToSheet();
+
+// OPTIONAL: sign in BEFORE the test starts instead of at the results screen.
+// Point the "Start 10-question test" button at this instead of openTest:
+function startTestFlow(){
+  if(!SHEET_SUBMIT.clientId || gsiToken){ openTest(); return; }
+  loadGsi(()=>{
+    if(!(window.google && google.accounts && google.accounts.oauth2)){ openTest(); return; }
+    const client = google.accounts.oauth2.initTokenClient({
+      client_id: SHEET_SUBMIT.clientId,
+      scope: 'openid email profile',
+      prompt: 'select_account',
+      callback: resp=>{ gsiToken = resp.access_token || ''; openTest(); },
+      error_callback: err=>{ toast('Google sign-in cancelled' + (err && err.type ? ' (' + err.type + ')' : '')); }
+    });
+    client.requestAccessToken();
+  });
+}
+$('startTestBtn').onclick = startTestFlow;
 ```
+
+> **Note:** the shipped `index.html` uses this start-of-test flow. `gsiToken` is
+> captured once at the start, so the results-screen button submits directly without
+> asking again.
 
 The payload's `responses` are the option letters in Q1→Q10 order (e.g.
 `D,B,A,A,C,B,D,B,B,B`), matching the sheet's columns.
