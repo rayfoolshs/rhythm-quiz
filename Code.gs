@@ -59,6 +59,27 @@ function doPost(e){
 }
 
 /************************  GET  ***************************/
-function doGet(){
+// Health check, OR a submit via top-level navigation (works with restricted
+// deployments, since the browser sends the signed-in Google session cookies).
+function doGet(e){
+  const p = (e && e.parameter) ? e.parameter : {};
+  if(p.action === 'submit'){
+    try{
+      const responses = String(p.responses || '').split(',').filter(function(x){ return x !== ''; });
+      const row = [new Date(), Session.getActiveUser().getEmail() || '(not signed in)',
+                   String(p.name || ''), String(p.year || ''), String(p.score || '')]
+                   .concat(responses, [ String(p.wrong || '') ]);
+      while(row.length < HEADERS.length) row.push('');   // pad to table width
+      getSheet_().appendRow(row.slice(0, HEADERS.length));
+      return HtmlService.createHtmlOutput(
+        '<html><body style="font:16px/1.5 system-ui,sans-serif;padding:28px">' +
+        '<b>Saved to the class sheet ✓</b><br>You can close this tab.' +
+        '</body><script>setTimeout(function(){window.close();},900);</script></html>');
+    }catch(err){
+      return HtmlService.createHtmlOutput(
+        '<html><body style="font:16px/1.5 system-ui,sans-serif;padding:28px">' +
+        'Error: ' + err + '</body></html>');
+    }
+  }
   return json_({ ok:true, service:'rhythm-quiz-append' });
 }

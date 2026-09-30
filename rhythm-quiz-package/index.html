@@ -1455,7 +1455,7 @@ $('clearRecordsBtn').onclick = ()=>{
    GOOGLE-SHEET-SUBMIT.md for the Apps Script and setup steps.
    ============================================================ */
 const SHEET_SUBMIT = {
-  url: 'https://script.google.com/a/macros/lakelandshs.wa.edu.au/s/AKfycbzLivHIkunDDjo8uh_qAJN2AwyQsd4M6pkZUCVgdmMsJynNc3JtzjnywnzZvUtGJKzxkQ/exec',
+  url: 'https://script.google.com/macros/s/AKfycbzMEwaHuYoXBmZVfDy9rQ8rLL0knQDu0-yDdNK7LC9pMU9JN68k5LHWys-2r_BFppC_CA/exec',
   clientId: '277062244479-7sdej9i2ands0rvs79q6g70kgjbflh52.apps.googleusercontent.com'
 };
 let gsiToken = null;   // holds a Google OAuth access token after sign-in
@@ -1500,6 +1500,13 @@ function startTestFlow(){
     client.requestAccessToken();
   });
 }
+function sheetSubmitUrl(payload){
+  const q = new URLSearchParams({
+    action:'submit', name:payload.name, year:payload.year, score:payload.score,
+    responses:payload.responses.join(','), wrong:payload.wrong, t:Date.now()
+  });
+  return SHEET_SUBMIT.url + (SHEET_SUBMIT.url.indexOf('?') >= 0 ? '&' : '?') + q.toString();
+}
 function submitToSheet(){
   if(!test || test.score == null) return;
   const payload = {
@@ -1513,6 +1520,12 @@ function submitToSheet(){
   };
   const btn = $('sheetSubmit'), st = $('sheetStatus');
   btn.disabled = true; st.textContent = 'Submitting…';
+  // Open a tab now, while still inside the click, so the popup blocker allows it.
+  // If the direct request is refused by the deployment's login wall (common for
+  // domain-restricted web apps), we navigate this tab to the script URL instead —
+  // a top-level visit carries the student's signed-in Google session.
+  let tab = null;
+  try { tab = window.open('', '_blank'); } catch(e){ tab = null; }
   fetch(SHEET_SUBMIT.url, {
     method : 'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // text/plain avoids a CORS preflight
@@ -1520,6 +1533,7 @@ function submitToSheet(){
   })
   .then(r => r.json())
   .then(res=>{
+    if(tab) tab.close();
     if(res && res.ok){
       st.textContent = 'Saved to class sheet' + (res.email ? ' as ' + res.email : '');
       btn.textContent = 'Submitted ✓';
@@ -1529,8 +1543,14 @@ function submitToSheet(){
     }
   })
   .catch(()=>{
-    st.textContent = 'Could not reach the sheet (offline?). CSV still works.';
-    btn.disabled = false;
+    if(tab){
+      tab.location.href = sheetSubmitUrl(payload);
+      st.textContent = 'Submitted via Google — check the Results tab.';
+      btn.textContent = 'Submitted ✓';
+    } else {
+      st.textContent = 'Could not reach the sheet (offline?). CSV still works.';
+      btn.disabled = false;
+    }
   });
 }
 // Reveal + wire the button only when configured (app is unchanged otherwise).
