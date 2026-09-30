@@ -1,7 +1,6 @@
 /************************  CONFIG  ************************/
-const SHEET_ID   = 'PASTE_YOUR_SPREADSHEET_ID';   // from the sheet URL
+const SHEET_ID   = '1J3nfQiID9LS0f2seNd1YsulmA5Mqum-mV1pMrl1azlE';   // your spreadsheet
 const SHEET_NAME = 'Results';
-const CLIENT_ID  = '';                            // optional: set only for Mode 2
 const HEADERS = ['Timestamp','Email','Name','Year','Score',
                  'Q1','Q2','Q3','Q4','Q5','Q6','Q7','Q8','Q9','Q10','Wrong'];
 
