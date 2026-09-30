@@ -1,0 +1,1535 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rhythm Quiz — Complete the Bar (WA Music Scope &amp; Sequence)</title>
+<style>
+  :root{
+    --ink:#161226;
+    --muted:#6b6780;
+    --line:#e2e0ee;
+    --bg:#f6f5fb;
+    --card:#ffffff;
+    --brand:#5b45c9;
+    --brand2:#7c5cff;
+    --good:#15915b;
+    --goodbg:#e7f7ef;
+    --bad:#c23b52;
+    --badbg:#fdeced;
+    --amber:#b7791f;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--ink); background:var(--bg); line-height:1.45;
+  }
+  header{
+    background:linear-gradient(135deg,#3b2d86,#5b45c9 55%,#7c5cff);
+    color:#fff; padding:20px 22px 16px;
+  }
+  header h1{margin:0 0 4px; font-size:1.35rem; letter-spacing:.2px}
+  header p{margin:0; opacity:.85; font-size:.85rem}
+  .wrap{max-width:1080px; margin:0 auto; padding:0 16px}
+  .yearbar{
+    position:sticky; top:0; z-index:20; background:#fff; border-bottom:1px solid var(--line);
+    box-shadow:0 2px 10px rgba(30,20,80,.05);
+  }
+  .yearbar .wrap{display:flex; gap:6px; overflow-x:auto; padding:10px 16px}
+  .tab{
+    flex:0 0 auto; border:1px solid var(--line); background:#fff; color:var(--muted);
+    padding:7px 12px; border-radius:999px; font-size:.82rem; font-weight:600; cursor:pointer;
+    white-space:nowrap; transition:.15s;
+  }
+  .tab:hover{border-color:var(--brand2); color:var(--brand)}
+  .tab.active{background:var(--brand); border-color:var(--brand); color:#fff}
+  main{padding:18px 0 60px}
+  .grid{display:grid; grid-template-columns:1.55fr 1fr; gap:16px}
+  @media (max-width:820px){ .grid{grid-template-columns:1fr} }
+  .card{background:var(--card); border:1px solid var(--line); border-radius:16px; padding:18px}
+  .card h2{margin:0 0 10px; font-size:1rem}
+  .eyebrow{font-size:.72rem; text-transform:uppercase; letter-spacing:.12em; color:var(--brand); font-weight:700}
+  .prompt{font-size:1.02rem; margin:6px 0 14px; font-weight:600}
+  .barwrap{background:#fbfaff; border:1px solid var(--line); border-radius:12px; padding:10px 12px; overflow-x:auto}
+  .options{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:16px}
+  @media (max-width:560px){ .options{grid-template-columns:1fr} }
+  .opt{
+    display:flex; align-items:center; gap:10px; background:#fff; border:2px solid var(--line);
+    border-radius:12px; padding:8px 10px; cursor:pointer; transition:.12s; text-align:left;
+  }
+  .opt:hover{border-color:var(--brand2); transform:translateY(-1px)}
+  .opt .letter{
+    flex:0 0 auto; width:26px; height:26px; border-radius:50%; background:#f0edff; color:var(--brand);
+    display:grid; place-items:center; font-weight:800; font-size:.8rem;
+  }
+  .opt .glyph{overflow-x:auto; max-width:100%}
+  .opt.correct{border-color:var(--good); background:var(--goodbg)}
+  .opt.correct .letter{background:var(--good); color:#fff}
+  .opt.wrong{border-color:var(--bad); background:var(--badbg)}
+  .opt.wrong .letter{background:var(--bad); color:#fff}
+  .opt.dim{opacity:.5}
+  .opt:disabled{cursor:default; transform:none}
+  .feedback{margin-top:14px; padding:12px 14px; border-radius:12px; font-size:.9rem; display:none}
+  .feedback.show{display:block}
+  .feedback.ok{background:var(--goodbg); color:#0c6b43; border:1px solid #b9e6cf}
+  .feedback.no{background:var(--badbg); color:#96324a; border:1px solid #f3c3cc}
+  .feedback b{font-weight:800}
+  .controls{display:flex; gap:8px; flex-wrap:wrap; margin-top:16px}
+  button.btn{
+    border:1px solid var(--line); background:#fff; color:var(--ink); padding:9px 14px; border-radius:10px;
+    font-weight:600; font-size:.86rem; cursor:pointer; transition:.12s;
+  }
+  button.btn:hover{border-color:var(--brand2)}
+  button.btn.primary{background:var(--brand); color:#fff; border-color:var(--brand)}
+  button.btn.primary:hover{background:#4a37b0}
+  .stats{display:flex; gap:16px; margin-top:4px}
+  .stat{flex:1; background:#fbfaff; border:1px solid var(--line); border-radius:12px; padding:10px; text-align:center}
+  .stat .n{font-size:1.4rem; font-weight:800; color:var(--brand)}
+  .stat .l{font-size:.72rem; color:var(--muted); text-transform:uppercase; letter-spacing:.08em}
+  .learnlist{list-style:none; margin:0; padding:0}
+  .learnlist li{display:flex; align-items:center; gap:10px; padding:7px 0; border-bottom:1px dashed var(--line)}
+  .learnlist li:last-child{border-bottom:none}
+  .learnlist .desc{font-size:.82rem; color:var(--muted)}
+  .learnlist .desc b{color:var(--ink)}
+  .sigchip{display:inline-block; background:#f0edff; color:var(--brand); border-radius:6px; padding:1px 7px; font-weight:700; font-size:.78rem; margin-right:5px}
+  .hint{font-size:.82rem; color:var(--muted); margin-top:8px}
+  .keypanel{display:none}
+  .keypanel.show{display:block}
+  table.key{width:100%; border-collapse:collapse; font-size:.82rem}
+  table.key th,table.key td{border-bottom:1px solid var(--line); padding:6px 8px; text-align:left; vertical-align:top}
+  table.key th{color:var(--muted); font-size:.72rem; text-transform:uppercase; letter-spacing:.06em}
+  .toast{position:fixed; left:50%; bottom:22px; transform:translateX(-50%); background:#161226; color:#fff;
+    padding:10px 16px; border-radius:999px; font-size:.85rem; opacity:0; pointer-events:none; transition:.25s; z-index:50}
+  .toast.show{opacity:1}
+  .legend{font-size:.78rem; color:var(--muted); margin-top:10px}
+  .legend code{background:#f0edff; color:var(--brand); padding:1px 5px; border-radius:5px}
+  .yearhead{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap}
+  .yearhead h2{margin:0}
+  .tiny{font-size:.78rem; color:var(--muted)}
+  .footer{color:var(--muted); font-size:.75rem; margin-top:18px; text-align:center}
+  /* ---------- test mode ---------- */
+  .btn.test{background:var(--brand2); color:#fff; border-color:var(--brand2)}
+  .btn.test:hover{background:#6a49f0}
+  .btn.google{background:#fff; border:1px solid #dadce0; color:#3c4043}
+  .btn.google:hover{border-color:#bdc1c6; background:#f8f9fa}
+  .btn.google:disabled{opacity:.6; cursor:default}
+  .overlay{position:fixed; inset:0; background:rgba(22,18,38,.55); display:none; z-index:100; padding:18px; overflow:auto}
+  .overlay.show{display:block}
+  .modal{max-width:900px; margin:24px auto; background:#fff; border-radius:18px; padding:22px; box-shadow:0 24px 60px rgba(20,10,60,.35)}
+  .modal h2{margin:0 0 6px}
+  .modal .prompt{margin-top:14px}
+  .field{display:block; margin:16px 0}
+  .field span{display:block; font-size:.8rem; font-weight:700; color:var(--muted); margin-bottom:5px}
+  .field input{width:100%; padding:11px 12px; border:2px solid var(--line); border-radius:10px; font-size:1rem; font-family:inherit}
+  .field input:focus{outline:none; border-color:var(--brand2)}
+  .modalbtns{display:flex; gap:8px; flex-wrap:wrap; margin-top:18px}
+  .testtop{display:flex; justify-content:space-between; align-items:center; font-size:.85rem; color:var(--muted); font-weight:700}
+  .progress{height:8px; background:#ece9f8; border-radius:999px; overflow:hidden; margin:8px 0 4px}
+  .progress > div{height:100%; width:0; background:linear-gradient(90deg,var(--brand),var(--brand2)); transition:width .25s}
+  .opt.chosen{border-color:var(--brand2); background:#f4f0ff; box-shadow:0 0 0 3px #e6dfff}
+  table.review{width:100%; border-collapse:collapse; margin-top:12px}
+  table.review th,table.review td{border-bottom:1px solid var(--line); padding:6px 8px; text-align:left; vertical-align:middle}
+  table.review th{font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:var(--muted)}
+  table.review tr.no{background:var(--badbg)}
+  table.review tr.ok{background:var(--goodbg)}
+  table.review .mark{font-size:1.15rem; font-weight:800; text-align:center}
+  table.review tr.no .mark{color:var(--bad)}
+  table.review tr.ok .mark{color:var(--good)}
+  .recordsbtns,.modalbtns{display:flex; gap:8px; flex-wrap:wrap}
+  .scorebig{font-size:1.05rem; margin:6px 0}
+  #resultTable{overflow-x:auto}
+  table.review td.qcell{width:40%}
+  table.review td.qcell svg{width:100% !important; height:auto !important; max-width:380px}
+  table.review td .glyph svg{max-width:170px !important; height:auto !important}
+  table.review .qtext{font-size:.85rem}
+  @media print{
+    header,.yearbar,.controls,.options .letter,.toast{display:none !important}
+    body{background:#fff}
+    .card{border:1px solid #ccc; break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>Rhythm Quiz — Complete the Bar</h1>
+    <p>Based on the WA Curriculum: The Arts — Music, Scope &amp; Sequence (Pre-primary–Year 10) Addendum. Choose the rhythm that completes the bar.</p>
+  </div>
+</header>
+
+<nav class="yearbar"><div class="wrap" id="tabs"></div></nav>
+
+<main class="wrap">
+  <div class="grid">
+    <!-- QUIZ -->
+    <section>
+      <div class="card">
+        <div class="yearhead">
+          <span class="eyebrow" id="yearLabel">Year 2</span>
+          <span class="tiny" id="topicLabel"></span>
+        </div>
+        <p class="prompt" id="prompt">Which rhythm completes the bar?</p>
+        <div class="barwrap" id="barwrap"></div>
+        <div class="options" id="options"></div>
+        <div class="feedback" id="feedback"></div>
+        <div class="controls">
+          <button class="btn primary" id="nextBtn" disabled>Next question →</button>
+          <button class="btn" id="skipBtn">New question</button>
+          <button class="btn" id="hintBtn">Need a hint?</button>
+          <button class="btn" id="resetBtn">Restart score</button>
+          <button class="btn test" id="startTestBtn">Start 10-question test</button>
+        </div>
+        <p class="hint" id="hintText"></p>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <h2>Answer key (for the teacher)</h2>
+        <p class="tiny">Tick items off as a class. Answers are revealed after each question.</p>
+        <div id="keyList"></div>
+      </div>
+    </section>
+
+    <!-- SIDE -->
+    <aside>
+      <div class="card">
+        <h2>Score</h2>
+        <div class="stats">
+          <div class="stat"><div class="n" id="statCorrect">0</div><div class="l">Correct</div></div>
+          <div class="stat"><div class="n" id="statTotal">0</div><div class="l">Answered</div></div>
+          <div class="stat"><div class="n" id="statStreak">0</div><div class="l">Streak</div></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <h2 id="learnTitle">Rhythms for this year</h2>
+        <p class="tiny">Only the rhythms listed for this year group are used in the questions.</p>
+        <div id="learnList"></div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <h2>How to play</h2>
+        <p class="tiny">Read the time signature. Work out how many beats the empty box needs, then choose the option whose note values add up to exactly that many beats.</p>
+        <p class="legend">Shortcuts: <code>1–4</code> choose an answer, <code>Enter</code> next question.</p>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <h2>Class results</h2>
+        <p class="tiny">Saved tests are collected in this browser and written into the CSV file, so the list of students grows each time.</p>
+        <div id="recordsList"></div>
+        <div class="recordsbtns">
+          <button class="btn" id="csvYearBtn">Download CSV (this year)</button>
+          <button class="btn" id="csvAllBtn">Download CSV (all years)</button>
+          <button class="btn" id="clearRecordsBtn">Clear results</button>
+        </div>
+      </div>
+    </aside>
+  </div>
+  <p class="footer">Rhythm content taken from the Addendum: Examples of the elements of music (Rhythm) — Pre-primary to Year 10.</p>
+</main>
+
+<!-- ===== test mode ===== -->
+<div class="overlay" id="testOverlay">
+  <div class="modal">
+    <div id="testStart">
+      <h2 id="testTitle">10-question test</h2>
+      <p class="tiny">This test has 10 questions. Answer every question, then your result is added to the class CSV. Nothing is marked correct or wrong until the end.</p>
+      <label class="field"><span>Student name</span>
+        <input id="studentName" type="text" autocomplete="off" placeholder="Type your full name" />
+      </label>
+      <div class="modalbtns">
+        <button class="btn primary" id="testBegin">Begin test →</button>
+        <button class="btn" id="testClose">Cancel</button>
+      </div>
+    </div>
+
+    <div id="testQuiz" style="display:none">
+      <div class="testtop"><span id="testProgress">Question 1 of 10</span><span id="testName"></span></div>
+      <div class="progress"><div id="testBar"></div></div>
+      <p class="prompt" id="testPrompt"></p>
+      <div class="barwrap" id="testBarwrap"></div>
+      <div class="options" id="testOptions"></div>
+      <div class="modalbtns">
+        <button class="btn primary" id="testNext" disabled>Next →</button>
+        <button class="btn" id="testQuit">Quit test</button>
+      </div>
+    </div>
+
+    <div id="testResult" style="display:none">
+      <h2 id="resultTitle">Result</h2>
+      <p class="scorebig" id="resultScore"></p>
+      <div id="resultTable"></div>
+      <div class="modalbtns">
+        <button class="btn primary" id="saveCsv">Save &amp; download CSV</button>
+        <button class="btn google" id="sheetSubmit" style="display:none">Sign in with Google &amp; submit</button>
+        <button class="btn" id="retake">Retake test</button>
+        <button class="btn" id="closeResult">Back to practice</button>
+      </div>
+      <p class="tiny" id="sheetStatus" style="margin-top:8px"></p>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="lib/vexflow.min.js"></script>
+<script>
+"use strict";
+
+/* ============================================================
+   1. MUSIC NOTE MODEL + SVG RENDERER (no external fonts)
+   ============================================================ */
+const STAFF = [40, 50, 60, 70, 80];
+const CY = 70;        // notehead centre (middle-ish line)
+const STEM_TOP = 40;  // stem reaches top staff line
+
+// duration in crotchet (quarter-note) beats
+const DUR = {
+  'semibreve': 4, 'dotted-minim': 3, 'minim': 2,
+  'dotted-crotchet': 1.5, 'crotchet': 1, 'dotted-quaver': 0.75,
+  'quaver': 0.5, 'dotted-semiquaver': 0.375, 'semiquaver': 0.25,
+  'semibreve-rest': 4, 'dotted-minim-rest': 3, 'minim-rest': 2,
+  'dotted-crotchet-rest': 1.5, 'crotchet-rest': 1,
+  'quaver-rest': 0.5, 'dotted-quaver-rest': 0.75
+};
+
+const NICE_NAME = {
+  0.25: 'a semiquaver', 0.375: 'a dotted semiquaver', 0.5: 'a quaver',
+  0.75: 'a dotted quaver', 1: 'a crotchet', 1.5: 'a dotted crotchet',
+  2: 'a minim', 3: 'a dotted minim', 4: 'a semibreve'
+};
+const SHORT_NAME = {
+  0.25:'semiquaver',0.375:'dotted semiquaver',0.5:'quaver',0.75:'dotted quaver',
+  1:'crotchet',1.5:'dotted crotchet',2:'minim',3:'dotted minim',4:'semibreve'
+};
+
+function notehead(cx, filled){
+  return `<ellipse cx="${cx}" cy="${CY}" rx="7.2" ry="5.1" fill="${filled?'#161226':'#fff'}" stroke="#161226" stroke-width="1.7" transform="rotate(-20 ${cx} ${CY})"/>`;
+}
+function stem(cx, to = STEM_TOP){
+  return `<line x1="${cx+6.2}" y1="${CY-2}" x2="${cx+6.2}" y2="${to}" stroke="#161226" stroke-width="1.8"/>`;
+}
+function dotat(cx){ return `<circle cx="${cx}" cy="${CY}" r="2.5" fill="#161226"/>`; }
+function flagAt(x, y){
+  return `<path d="M ${x} ${y} c 9 3.5 12 10 4.5 18 c 1.5 -8 -1.5 -12 -4.5 -13.5 z" fill="#161226"/>`;
+}
+function restGlyph(kind, x){
+  switch(kind){
+    case 'semibreve-rest':   return {svg:`<rect x="${x+5}" y="59" width="17" height="6.5" fill="#161226"/>`, w:28};
+    case 'minim-rest':       return {svg:`<rect x="${x+5}" y="52" width="17" height="6.5" fill="#161226"/>`, w:28};
+    case 'dotted-minim-rest':return {svg:`<rect x="${x+5}" y="52" width="17" height="6.5" fill="#161226"/>`+dotat(x+27), w:38};
+    case 'dotted-crotchet-rest':return {svg:`<rect x="${x+5}" y="52" width="17" height="6.5" fill="#161226"/>`+dotat(x+27), w:38};
+    case 'crotchet-rest':
+      return {svg:`<path d="M ${x+13} 42
+        c -6 4 -7 8 -1 11
+        c 8 4 7 8 1 11
+        c -5 3 -6 6 -1 9
+        c -3 -6 2 -8 6 -10
+        c 7 -4 6 -9 -1 -13
+        c -5 -3 -4 -5 0 -8 z" fill="#161226"/>`, w:28};
+    case 'quaver-rest':
+      return {svg:`<path d="M ${x+15} 42
+        c -7 2 -10 7 -5 11
+        c -5 3 -8 8 -9 12
+        l 2.4 0
+        c 2 -6 6 -10 11 -12
+        c 4 -2 3 -6 0 -8
+        c -2 -2 -2 -4 0 -5 z" fill="#161226"/>`, w:28};
+    case 'dotted-quaver-rest':
+      return {svg:`<path d="M ${x+15} 42
+        c -7 2 -10 7 -5 11
+        c -5 3 -8 8 -9 12
+        l 2.4 0
+        c 2 -6 6 -10 11 -12
+        c 4 -2 3 -6 0 -8
+        c -2 -2 -2 -4 0 -5 z" fill="#161226"/>`+dotat(x+29), w:40};
+    default: return {svg:'', w:28};
+  }
+}
+function singleGlyph(name, x){
+  let svg='', w=32;
+  switch(name){
+    case 'semibreve':        svg = notehead(x+14,false); break;
+    case 'minim':            svg = notehead(x+14,false)+stem(x+14); break;
+    case 'dotted-minim':     svg = notehead(x+14,false)+stem(x+14)+dotat(x+28); w=42; break;
+    case 'crotchet':         svg = notehead(x+14,true)+stem(x+14); break;
+    case 'dotted-crotchet':  svg = notehead(x+14,true)+stem(x+14)+dotat(x+28); w=42; break;
+    case 'quaver':           svg = notehead(x+14,true)+stem(x+14)+flagAt(x+20.2,STEM_TOP); break;
+    case 'dotted-quaver':    svg = notehead(x+14,true)+stem(x+14)+flagAt(x+20.2,STEM_TOP)+dotat(x+31); w=44; break;
+    case 'semiquaver':       svg = notehead(x+14,true)+stem(x+14)+flagAt(x+20.2,STEM_TOP)+flagAt(x+20.2,STEM_TOP+7); break;
+    case 'dotted-semiquaver':svg = notehead(x+14,true)+stem(x+14)+flagAt(x+20.2,STEM_TOP)+flagAt(x+20.2,STEM_TOP+7)+dotat(x+31); w=44; break;
+  }
+  return {svg, w};
+}
+function beamedGlyph(members, x, triplet){
+  const spacing = 22, first = x + 13;
+  let svg='';
+  const stemX = [];
+  members.forEach((m,i)=>{
+    const cx = first + i*spacing;
+    svg += notehead(cx,true) + stem(cx);
+    if(m.dot) svg += dotat(cx+14);
+    stemX.push(cx+6.2);
+  });
+  const flagCount = n => n==='semiquaver' ? 2 : 1;
+  const maxFlags = Math.max(...members.map(m=>flagCount(m.n)));
+  for(let lvl=1; lvl<=maxFlags; lvl++){
+    const y = STEM_TOP + (lvl-1)*6.4;
+    let i=0;
+    while(i<members.length){
+      if(flagCount(members[i].n) >= lvl){
+        let j=i;
+        while(j+1<members.length && flagCount(members[j+1].n) >= lvl) j++;
+        if(j>i){
+          svg += `<rect x="${stemX[i]-1}" y="${y}" width="${(stemX[j]-stemX[i])+2}" height="4.6" fill="#161226"/>`;
+        } else {
+          svg += flagAt(stemX[i], y);
+        }
+        i=j+1;
+      } else i++;
+    }
+  }
+  const w = first + (members.length-1)*spacing + 22;
+  if(triplet){
+    const mid = (stemX[0] + stemX[members.length-1]) / 2;
+    svg += `<text x="${mid}" y="33" font-size="13" text-anchor="middle" font-family="Georgia,serif" font-style="italic" font-weight="700" fill="#161226">3</text>`;
+  }
+  return {svg, w};
+}
+function tiedGlyph(two, x){
+  const n1 = two[0].n || 'crotchet', n2 = two[1].n || 'crotchet';
+  const cx1 = x+14, cx2 = x+46;
+  let svg = notehead(cx1, n1!=='minim') + stem(cx1);
+  svg    += notehead(cx2, n2!=='minim') + stem(cx2);
+  svg    += `<path d="M ${cx1+7} ${CY+6} Q ${(cx1+cx2)/2} ${CY+17} ${cx2-6} ${CY+6}" fill="none" stroke="#161226" stroke-width="1.7"/>`;
+  return {svg, w:66};
+}
+
+function atomGlyph(a, x){
+  if(a.n)    return singleGlyph(a.n, x);
+  if(a.r)    return restGlyph(a.r, x);
+  if(a.beam) return beamedGlyph(a.beam, x, !!a.triplet);
+  if(a.tie)  return tiedGlyph(a.tie, x);
+  return {svg:'', w:0};
+}
+function measureAtoms(atoms){
+  let w=0;
+  atoms.forEach(a=>{
+    if(a.n) w += singleGlyph(a.n,0).w;
+    else if(a.r) w += restGlyph(a.r,0).w;
+    else if(a.beam) w += beamedGlyph(a.beam,0,a.triplet).w;
+    else if(a.tie) w += tiedGlyph(a.tie,0).w;
+  });
+  return w;
+}
+function drawAtoms(atoms, x0){
+  let x=x0, svg='';
+  atoms.forEach(a=>{ const r=atomGlyph(a,x); svg+=r.svg; x+=r.w; });
+  return {svg, w:x-x0, end:x};
+}
+function atomDur(a){
+  if(a.n) return DUR[a.n];
+  if(a.r) return DUR[a.r];
+  if(a.beam){
+    let d = a.beam.reduce((s,m)=> s + (m.n==='semiquaver'?0.25:(m.n==='dotted-quaver'?0.75:0.5)), 0);
+    if(a.triplet) d = d * 2/3;
+    return d;
+  }
+  if(a.tie) return (DUR[a.tie[0].n||'crotchet']) + (DUR[a.tie[1].n||'crotchet']);
+  return 0;
+}
+const cellDur = atoms => Math.round(atoms.reduce((s,a)=>s+atomDur(a),0)*1000)/1000;
+const eq = (a,b)=> Math.abs(a-b) < 1e-6;
+
+function staffLines(w){
+  return STAFF.map(y=>`<line x1="0" y1="${y}" x2="${w}" y2="${y}" stroke="#c9c6dd" stroke-width="1.1"/>`).join('');
+}
+function svgBar(sig, cells, totalBeats){
+  const tsW = sig ? 44 : 8;
+  let cursor = tsW + 14;
+  let inner='';
+  cells.forEach(c=>{
+    if(c.blank){
+      const w = Math.max(64, c.dur*78);
+      inner += `<rect x="${cursor+3}" y="30" width="${w-6}" height="60" rx="9" fill="#f4f0ff" stroke="#7c5cff" stroke-width="2" stroke-dasharray="6 5"/>`;
+      inner += `<text x="${cursor+w/2}" y="67" text-anchor="middle" font-size="28" font-weight="800" fill="#7c5cff">?</text>`;
+      cursor += w + 12;
+    } else {
+      const r = drawAtoms(c.atoms, cursor);
+      inner += r.svg;
+      cursor += r.w + 12;
+    }
+  });
+  const width = cursor + 10;
+  let ts='';
+  if(sig){
+    const [n,d] = sig.split('/');
+    ts = `<text x="20" y="62" font-size="21" font-weight="800" text-anchor="middle" fill="#161226">${n}</text>`
+       + `<text x="20" y="84" font-size="21" font-weight="800" text-anchor="middle" fill="#161226">${d}</text>`;
+  } else if(totalBeats){
+    ts = `<text x="16" y="78" font-size="15" font-weight="700" fill="#6b6780">${totalBeats} beats</text>`;
+  }
+  const barlines = `<line x1="0" y1="40" x2="0" y2="80" stroke="#161226" stroke-width="2.4"/>`
+                 + `<line x1="${width}" y1="40" x2="${width}" y2="80" stroke="#161226" stroke-width="2.4"/>`;
+  return `<svg class="bar" viewBox="0 0 ${width+2} 108" width="${width+2}" height="108" style="min-width:${Math.min(width+2,720)}px">${staffLines(width)}${ts}${barlines}${inner}</svg>`;
+}
+function svgCell(atoms){
+  const w = measureAtoms(atoms) + 20;
+  const r = drawAtoms(atoms, 10);
+  return `<svg viewBox="0 0 ${w} 108" width="${w}" height="108">${staffLines(w)}${r.svg}</svg>`;
+}
+
+/* ============================================================
+   1b. VEXFLOW HIGH-QUALITY NOTATION (falls back to SVG above)
+   ============================================================ */
+const VF = (typeof Vex !== "undefined" && Vex.Flow) ? Vex.Flow : null;
+const NOTE_KEY = "b/4";
+const VEX_BASE = {
+  'semibreve':'w','dotted-minim':'h','minim':'h',
+  'dotted-crotchet':'q','crotchet':'q',
+  'dotted-quaver':'8','quaver':'8',
+  'dotted-semiquaver':'16','semiquaver':'16',
+  'semibreve-rest':'w','dotted-minim-rest':'h','minim-rest':'h',
+  'dotted-crotchet-rest':'q','crotchet-rest':'q',
+  'dotted-quaver-rest':'8','quaver-rest':'8'
+};
+const isDottedName = name => name.indexOf('dotted-') === 0;
+
+// Vertical placement for rests, per standard notation:
+//   • a whole (semibreve) rest hangs from the 4th line up  -> treble key d/5
+//   • a half (minim) rest sits on the 3rd (middle) line    -> treble key b/4
+//   • crotchet / quaver / semiquaver rests sit about the middle line -> b/4
+function keyForNote(name){
+  if(name === 'semibreve-rest' || name === 'dotted-semibreve-rest') return 'd/5';
+  return NOTE_KEY;
+}
+function mkNote(name){
+  const isRest = name.indexOf('-rest') >= 0;
+  const n = new VF.StaveNote({ keys:[keyForNote(name)], duration: VEX_BASE[name] + (isRest ? 'r' : '') });
+  if(isDottedName(name)) n.addDotToAll();
+  return n;
+}
+function restCode(d){
+  const map = {
+    0.25:{base:'16',dot:false}, 0.375:{base:'16',dot:true},
+    0.5:{base:'8',dot:false},   0.75:{base:'8',dot:true},
+    1:{base:'q',dot:false},     1.5:{base:'q',dot:true},
+    2:{base:'h',dot:false},     3:{base:'h',dot:true},
+    4:{base:'w',dot:false}
+  };
+  return map[d] || {base:'q',dot:false};
+}
+function mkBlankRest(dur){
+  const c = restCode(dur);
+  const n = new VF.StaveNote({ keys:[NOTE_KEY], duration: c.base + 'r' });
+  if(c.dot) n.addDotToAll();
+  n.setStyle({fillStyle:'transparent', strokeStyle:'transparent'});
+  return n;
+}
+/* ---------- metric beaming ----------
+   Beams must never cross a bar line or break the pulse of the measure.
+   Each beam group is therefore confined to one beat:
+     • simple time  (2/4, 3/4, 4/4, 5/4) -> one crotchet
+     • compound time (6/8, 9/8, 12/8)     -> one dotted crotchet
+     • irregular 7/8                      -> 2 + 2 + 3 eighths
+   A note that would overhang its beat is left un-beamed (it keeps its flag). */
+const FLAGS = { 'quaver':1, 'dotted-quaver':1, 'semiquaver':2, 'dotted-semiquaver':2 };
+
+function beatGrid(sig){
+  if(!sig) return [0,1,2,3,4,5,6,7,8];
+  const p = sig.split('/'), n = +p[0], d = +p[1];
+  const b = [];
+  if(d === 4){ for(let i=0;i<=n;i++) b.push(i); return b; }
+  if(d === 8){
+    if(n % 3 === 0){ for(let i=0;i<=n/3;i++) b.push(i*1.5); return b; }
+    if(n === 7) return [0,1,2,3.5];
+    for(let i=0;i<=n;i++) b.push(i*0.5); return b;
+  }
+  const u = 4/d;
+  for(let i=0;i<=n;i++) b.push(i*u);
+  return b;
+}
+function intervalIndex(bounds, t){
+  for(let i=0;i<bounds.length-1;i++){ if(t >= bounds[i]-1e-6 && t < bounds[i+1]-1e-6) return i; }
+  return bounds.length-2;
+}
+function eventFrom(name){ return { vf: mkNote(name), dur: DUR[name], flags: FLAGS[name] || 0 }; }
+function atomsToEvents(atoms){
+  const events = [], tuplets = [], ties = [];
+  atoms.forEach(a=>{
+    if(a.n){ events.push(eventFrom(a.n)); }
+    else if(a.r){ events.push({ vf: mkNote(a.r), dur: DUR[a.r], flags: 0, rest: true }); }
+    else if(a.beam){
+      const group = [];
+      a.beam.forEach(m=>{
+        const e = eventFrom(m.n);
+        if(a.triplet) e.dur = e.dur * 2/3; // 3 in the time of 2
+        events.push(e); group.push(e);
+      });
+      if(a.triplet) tuplets.push(group);
+    } else if(a.tie){
+      const e1 = eventFrom(a.tie[0].n || 'crotchet');
+      const e2 = eventFrom(a.tie[1].n || 'crotchet');
+      events.push(e1, e2);
+      ties.push({ a:e1.vf, b:e2.vf });
+    }
+  });
+  return { events, tuplets, ties };
+}
+function metricBeams(events, sig, tupletEvents){
+  const bounds = beatGrid(sig);
+  let t = 0;
+  events.forEach(e=>{ e.start = Math.round(t*1000)/1000; t += e.dur; });
+  const groups = [];
+  let cur = [];
+  const flush = ()=>{ if(cur.length >= 2) groups.push(cur.slice()); cur = []; };
+  events.forEach(e=>{
+    const eligible = !e.rest && e.flags > 0 && !tupletEvents.has(e);
+    let idx = -1, fits = false;
+    if(eligible){
+      idx = intervalIndex(bounds, e.start);
+      fits = (e.start + e.dur) <= bounds[idx+1] + 1e-6;
+    }
+    if(!fits){ flush(); return; }
+    if(cur.length){
+      const prev = cur[cur.length-1];
+      const contiguous = Math.abs((prev.start + prev.dur) - e.start) < 1e-6;
+      if(intervalIndex(bounds, prev.start) !== idx || !contiguous) flush();
+    }
+    cur.push(e);
+  });
+  flush();
+  return groups;
+}
+function beamsFrom(groups){ return groups.map(g => new VF.Beam(g.map(e=>e.vf))); }
+function tupletsFrom(tuplets){
+  return {
+    tuplets: tuplets.map(g => new VF.Tuplet(g.map(e=>e.vf), {num_notes:3, notes_occupied:2})),
+    beams: tuplets.map(g => new VF.Beam(g.map(e=>e.vf)))
+  };
+}
+function tiesFrom(ties){
+  return ties.map(t => new VF.StaveTie({first_note:t.a, last_note:t.b, first_indices:[0], last_indices:[0]}));
+}
+function drawExtras(ctx, b){
+  b.beams.forEach(x=>x.setContext(ctx).draw());
+  b.tuplets.forEach(x=>x.setContext(ctx).draw());
+  b.ties.forEach(x=>x.setContext(ctx).draw());
+}
+function vexRaster(width, draw){
+  const div = document.createElement('div');
+  const r = new VF.Renderer(div, VF.Renderer.Backends.SVG);
+  r.resize(width, 150);
+  const ctx = r.getContext();
+  draw(ctx, width);
+  return div.innerHTML;
+}
+function vexBar(sig, cells, totalBeats){
+  const events = [], tuplets = [], ties = [];
+  let blankNote = null;
+  cells.forEach(c=>{
+    if(c.blank){
+      const vf = mkBlankRest(c.dur);
+      events.push({ vf:vf, dur:c.dur, flags:0, rest:true });
+      blankNote = vf;
+    } else {
+      const b = atomsToEvents(c.atoms);
+      events.push(...b.events); tuplets.push(...b.tuplets); ties.push(...b.ties);
+    }
+  });
+  const tupletEvents = new Set();
+  tuplets.forEach(g=>g.forEach(e=>tupletEvents.add(e)));
+  const beams = beamsFrom(metricBeams(events, sig, tupletEvents));
+  const tp = tupletsFrom(tuplets);
+  const notes = events.map(e=>e.vf);
+  const width = Math.max(390, 180 + 56*notes.length);
+  return vexRaster(width, (ctx, w)=>{
+    const stave = new VF.Stave(10, 25, w-20);
+    if(sig) stave.addTimeSignature(sig);
+    stave.setContext(ctx).draw();
+    const avail = Math.max(stave.getNoteEndX() - stave.getNoteStartX() - 14, 80);
+    let nb = 4, bv = 4;
+    if(sig){ const p = sig.split('/'); nb = +p[0]; bv = +p[1]; }
+    const voice = new VF.Voice({num_beats:nb, beat_value:bv});
+    voice.setStrict(false); voice.addTickables(notes);
+    new VF.Formatter().joinVoices([voice]).format([voice], avail);
+    voice.draw(ctx, stave);
+    drawExtras(ctx, {beams: beams.concat(tp.beams), tuplets: tp.tuplets, ties: tiesFrom(ties)});
+    if(blankNote){
+      const idx = notes.indexOf(blankNote);
+      const x0 = blankNote.getAbsoluteX();
+      let x1;
+      if(idx+1 < notes.length) x1 = notes[idx+1].getAbsoluteX();
+      else x1 = stave.getNoteEndX() - 8;
+      const left = Math.max(x0-14, stave.getNoteStartX()+2);
+      const right = Math.max(x1-6, left+48);
+      const top = stave.getYForLine(0)-7, bottom = stave.getYForLine(4)+7;
+      ctx.save();
+      if(ctx.setLineDash) ctx.setLineDash([6,5]);
+      ctx.setStrokeStyle('#7c5cff'); ctx.setFillStyle('#f4f0ff');
+      ctx.fillRect(left, top, right-left, bottom-top);
+      ctx.beginPath(); ctx.rect(left, top, right-left, bottom-top); ctx.stroke();
+      ctx.restore();
+      ctx.setFillStyle('#7c5cff'); ctx.setFont('Arial', 24, 'bold');
+      ctx.fillText('?', (left+right)/2 - 8, stave.getYForLine(2)+9);
+    }
+  });
+}
+function vexCell(atoms, sig){
+  const b = atomsToEvents(atoms);
+  const tupletEvents = new Set();
+  b.tuplets.forEach(g=>g.forEach(e=>tupletEvents.add(e)));
+  const beams = beamsFrom(metricBeams(b.events, sig, tupletEvents));
+  const tp = tupletsFrom(b.tuplets);
+  const notes = b.events.map(e=>e.vf);
+  const width = Math.max(160, 96 + 54*notes.length);
+  return vexRaster(width, (ctx, w)=>{
+    const stave = new VF.Stave(8, 25, w-16);
+    stave.setContext(ctx).draw();
+    const avail = Math.max(stave.getNoteEndX() - stave.getNoteStartX() - 12, 60);
+    const voice = new VF.Voice({num_beats:8, beat_value:4});
+    voice.setStrict(false); voice.addTickables(notes);
+    new VF.Formatter().joinVoices([voice]).format([voice], avail);
+    voice.draw(ctx, stave);
+    drawExtras(ctx, {beams: beams.concat(tp.beams), tuplets: tp.tuplets, ties: tiesFrom(b.ties)});
+  });
+}
+function renderBar(sig, cells, totalBeats){ return VF ? vexBar(sig, cells, totalBeats) : svgBar(sig, cells, totalBeats); }
+function renderCell(atoms, sig){ return VF ? vexCell(atoms, sig) : svgCell(atoms); }
+
+/* ---------- concept (non-staff) graphics ---------- */
+function beatRow(positions, filled=true){
+  const w = Math.max(...positions) + 24;
+  const dots = positions.map(x=>`<circle cx="${x}" cy="30" r="9.5" fill="${filled?'#161226':'#fff'}" stroke="#161226" stroke-width="2.4"/>`).join('');
+  return `<svg viewBox="0 0 ${w} 60" width="${w}" height="60">${dots}</svg>`;
+}
+function durationBar(kind){
+  const wrap = s => `<svg viewBox="0 0 130 60" width="130" height="60">${s}</svg>`;
+  if(kind==='long')    return wrap(`<rect x="12" y="22" width="106" height="17" rx="8.5" fill="#161226"/>`);
+  if(kind==='short')   return wrap(`<rect x="12" y="25" width="20" height="11" rx="5.5" fill="#161226"/>`);
+  if(kind==='silence') return wrap(`<circle cx="65" cy="30" r="15" fill="none" stroke="#161226" stroke-width="3.4"/>`);
+  return wrap('');
+}
+
+/* ============================================================
+   2. RHYTHM PATTERN LIBRARY (per year group from the addendum)
+   ============================================================ */
+const P = (id, atoms, since, note='') => ({id, atoms, since, note});
+const PATTERNS = [
+  P('e',    [{n:'quaver'}], 1, 'Quaver (eighth note)'),
+  P('ee',   [{beam:[{n:'quaver'},{n:'quaver'}]}], 1, 'Two quavers beamed'),
+  P('eee',  [{beam:[{n:'quaver'},{n:'quaver'},{n:'quaver'}]}], 1, 'Three quavers beamed'),
+  P('q',    [{n:'crotchet'}], 1, 'Crotchet (quarter note)'),
+  P('h',    [{n:'minim'}], 2, 'Minim (half note)'),
+  P('er',   [{r:'quaver-rest'}], 2, 'Quaver rest'),
+  P('eeee', [{beam:[{n:'quaver'},{n:'quaver'},{n:'quaver'},{n:'quaver'}]}], 1, 'Four quavers beamed'),
+  P('hrest',[{r:'minim-rest'}], 3, 'Minim rest'),
+  P('qrest',[{r:'crotchet-rest'}], 3, 'Crotchet rest'),
+  P('ssss', [{beam:[{n:'semiquaver'},{n:'semiquaver'},{n:'semiquaver'},{n:'semiquaver'}]}], 3, 'Four semiquavers beamed'),
+  P('qd',   [{n:'dotted-crotchet'}], 7, 'Dotted crotchet'),
+  P('hd',   [{n:'dotted-minim'}], 4, 'Dotted minim'),
+  P('w',    [{n:'semibreve'}], 4, 'Semibreve (whole note)'),
+  P('wrest',[{r:'semibreve-rest'}], 5, 'Semibreve rest'),
+  P('eds',  [{beam:[{n:'dotted-quaver'},{n:'semiquaver'}]}], 5, 'Dotted quaver + semiquaver'),
+  P('ess',  [{beam:[{n:'quaver'},{n:'semiquaver'},{n:'semiquaver'}]}], 5, 'Quaver + two semiquavers'),
+  P('sse',  [{beam:[{n:'semiquaver'},{n:'semiquaver'},{n:'quaver'}]}], 5, 'Two semiquavers + quaver'),
+  P('qde',  [{n:'dotted-crotchet'},{n:'quaver'}], 7, 'Dotted crotchet + quaver'),
+  P('tieq', [{tie:[{n:'crotchet'},{n:'crotchet'}]}], 8, 'Two crotchets tied'),
+  P('tiee', [{tie:[{n:'quaver'},{n:'quaver'}]}], 8, 'Two quavers tied'),
+  P('tri',  [{beam:[{n:'quaver'},{n:'quaver'},{n:'quaver'}],triplet:true}], 9, 'Quaver triplet'),
+  P('sync', [{n:'quaver'},{n:'crotchet'},{n:'quaver'}], 10, 'Syncopated rhythm (quaver–crotchet–quaver)')
+];
+
+/* ============================================================
+   3. YEAR GROUPS
+   ============================================================ */
+const YEARS = [
+  { id:'PP',  label:'Pre-primary', concept:true, beats:4,
+    rhythms:['Steady beat','Sound and silence','Long and short sounds','Same and different patterns'] },
+  { id:'Y1',  label:'Year 1', concept:true, beats:4,
+    rhythms:['Quaver (eighth note)','Two quavers beamed','Three quavers beamed','Beat groups of 2, 3 and 4'] },
+  { id:'Y2',  label:'Year 2', sigs:['2/4'],
+    rhythms:['Time signature 2/4','Minim (half note)','Crotchet (quarter note)','Quaver and quaver rest'] },
+  { id:'Y3',  label:'Year 3', sigs:['4/4'],
+    rhythms:['Time signature 4/4','Four semiquavers beamed','Minim rest','Crotchet rest'] },
+  { id:'Y4',  label:'Year 4', sigs:['3/4'],
+    rhythms:['Time signature 3/4','Dotted minim','Semibreve (whole note)','Dotted crotchet'] },
+  { id:'Y5',  label:'Year 5', sigs:['2/4','3/4','4/4'],
+    rhythms:['Semibreve rest','Anacrusis','Dotted quaver + semiquaver','Quaver + two semiquavers'] },
+  { id:'Y6',  label:'Year 6', sigs:['2/4','3/4','4/4'],
+    rhythms:['Consolidate 2/4, 3/4 and 4/4','All simple-time note values','All simple-time rests'] },
+  { id:'Y7',  label:'Year 7', sigs:['2/4','3/4','4/4'],
+    rhythms:['Time signatures 2/4, 3/4, 4/4','Groups of beats (2, 3, 4)','Anacrusis','Dotted crotchet + quaver'] },
+  { id:'Y8',  label:'Year 8', sigs:['6/8'],
+    rhythms:['Compound time 6/8','Ties','Dotted crotchet (one compound beat)','Dotted minim (whole 6/8 bar)'] },
+  { id:'Y9',  label:'Year 9', sigs:['6/8','3/4','4/4'],
+    rhythms:['Beat groupings in simple time','Irregular metre 7/8','Quaver triplet','Swung rhythms'] },
+  { id:'Y10', label:'Year 10', sigs:['12/8','9/8','7/8','5/4','4/4'],
+    rhythms:['Compound time 12/8 and 9/8','Simple time 5/4','Syncopation','Irregular metres and tied notes'] }
+];
+
+/* ---------- metric helpers ---------- */
+const sigTotal = s => { const [n,d]=s.split('/').map(Number); return Math.round(n*4/d*1000)/1000; };
+
+const PARTITIONS = {
+  '2/4':  [[1,1],[2],[1.5,0.5],[0.5,1,0.5],[1,0.5,0.5]],
+  '3/4':  [[3],[1,1,1],[2,1],[1,2],[1.5,1.5],[1,0.5,1.5],[0.5,1,1.5]],
+  '4/4':  [[1,1,1,1],[2,2],[2,1,1],[1,1,2],[1.5,0.5,2],[1.5,1,1.5],[3,1],[4]],
+  '6/8':  [[1.5,1.5],[3]],
+  '9/8':  [[1.5,1.5,1.5],[3,1.5],[1.5,3]],
+  '12/8': [[1.5,1.5,1.5,1.5],[3,3],[3,1.5,1.5],[1.5,1.5,3]],
+  '7/8':  [[1,1,1.5],[1.5,1,1],[1,1.5,1]],
+  '5/4':  [[1,1,1,1,1],[2,2,1],[1.5,1.5,2],[3,2]]
+};
+
+/* ============================================================
+   4. QUESTION GENERATOR
+   ============================================================ */
+let seed = 20260926;
+function rnd(){ seed = (seed*1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; }
+function pick(arr){ return arr[Math.floor(rnd()*arr.length)]; }
+function shuffle(arr){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(rnd()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+function patternsFor(yearIdx){
+  return PATTERNS.filter(p => p.since <= yearIdx);
+}
+function makeQuestion(yearIdx, mode){
+  const y = YEARS[yearIdx];
+  if(y.concept) return makeConceptQuestion(yearIdx);
+
+  const allowed = patternsFor(yearIdx);
+  const byDur = {};
+  allowed.forEach(p=>{ const d=Math.round(cellDur(p.atoms)*1000)/1000; (byDur[d]=byDur[d]||[]).push(p); });
+  const durs = Object.keys(byDur).map(Number);
+
+  for(let attempt=0; attempt<80; attempt++){
+    const sig = pick(y.sigs);
+    // Two question types: complete PART of a bar, or fill the WHOLE bar. The whole-bar
+    // type lets the year's focus rhythms (e.g. a minim in 2/4, a dotted minim in 3/4)
+    // appear as the correct answer instead of only prior-year content.
+    const allTpls = PARTITIONS[sig] || [];
+    const multiTpls = shuffle(allTpls.filter(t => t.length >= 2));
+    const wholeTpls = shuffle(allTpls.filter(t => t.length === 1));
+    const wantWhole = mode === 'whole' ? true
+                     : mode === 'part' ? false
+                     : (wholeTpls.length > 0 && rnd() < 0.4);
+    const ordered = wantWhole ? wholeTpls.concat(multiTpls) : multiTpls.concat(wholeTpls);
+    let tpl = null, slotOpts = null;
+    for(const t of ordered){
+      const so = t.map(d => byDur[d] || []);
+      if(so.every(o => o.length)){ tpl = t; slotOpts = so; break; }
+    }
+    if(!tpl) continue;
+
+    const blankIdx = Math.floor(rnd()*tpl.length);
+    const target = tpl[blankIdx];
+    // Prefer the rhythm newly introduced in this year (e.g. a dotted minim in Year 4).
+    const preferNew = slotOpts[blankIdx].filter(p => p.since === yearIdx);
+    const answer = pick(preferNew.length ? preferNew : slotOpts[blankIdx]);
+
+    // distractors: distinct durations, closest first
+    const otherDurs = durs.filter(d => !eq(d,target));
+    if(otherDurs.length < 3) continue;
+    otherDurs.sort((a,b)=> Math.abs(a-target)-Math.abs(b-target));
+    // add a little randomness among the closest 5
+    const pool = shuffle(otherDurs.slice(0, Math.min(otherDurs.length, 5)));
+    const chosenDurs = [];
+    for(const d of pool){ if(chosenDurs.length>=3) break; chosenDurs.push(d); }
+    if(chosenDurs.length<3) continue;
+    const distractors = chosenDurs.map(d => pick(byDur[d]));
+
+    // build cells
+    const cells = tpl.map((d,i)=> i===blankIdx
+        ? {blank:true, dur:d}
+        : {atoms: pick(byDur[d]).atoms});
+
+    const options = shuffle(
+      [{atoms:answer.atoms, dur:target, correct:true, note:answer.note}].concat(
+        distractors.map(p=>({atoms:p.atoms, dur:Math.round(cellDur(p.atoms)*1000)/1000, correct:false, note:p.note}))
+      )
+    );
+
+    // safety: ensure exactly one option has dur == target
+    const correctCount = options.filter(o=>eq(o.dur,target)).length;
+    if(correctCount !== 1) continue;
+
+    return {
+      yearIdx, sig, cells, target, options,
+      total: sigTotal(sig),
+      prompt: `Which rhythm completes this ${sig} bar?`,
+      explain: `The empty space must last ${describeMissing(sig, target, sigTotal(sig))}.`
+    };
+  }
+  // fallback: simple 4/4 crotchet question
+  const sig='4/4', target=1;
+  const cells=[{atoms:[{n:'crotchet'}]},{atoms:[{n:'crotchet'}]},{blank:true,dur:1},{atoms:[{n:'crotchet'}]}];
+  return {
+    yearIdx, sig, cells, target, total:4,
+    options:[
+      {atoms:[{n:'crotchet'}],dur:1,correct:true},
+      {atoms:[{n:'quaver'}],dur:0.5,correct:false},
+      {atoms:[{n:'minim'}],dur:2,correct:false},
+      {atoms:[{n:'dotted-crotchet'}],dur:1.5,correct:false}
+    ],
+    prompt:'Which rhythm completes this 4/4 bar?',
+    explain:`The empty space must last ${describeMissing('4/4', target, 4)}.`
+  };
+}
+
+function fmtBeats(d){
+  const names = {0.5:'half a beat',1:'1 beat',1.5:'1½ beats',2:'2 beats',3:'3 beats',4:'4 beats',0.25:'a quarter of a beat',0.75:'¾ of a beat'};
+  return names[d] || (d + ' beats');
+}
+// Length of one beat, in crotchet beats, for a given time signature.
+// Simple time (x/4) -> a crotchet; compound time (6/8, 9/8, 12/8) -> a dotted crotchet.
+function beatUnit(sig){
+  if(!sig) return 1;
+  const p = sig.split('/'), n = +p[0], d = +p[1];
+  if(d === 4) return 1;
+  if(d === 8) return (n % 3 === 0) ? 1.5 : 0.5;
+  return 4/d;
+}
+function isIrregular8(sig){
+  if(!sig) return false;
+  const p = sig.split('/');
+  return +p[1] === 8 && (+p[0]) % 3 !== 0;
+}
+// Describe a duration using the beats of its own metre (feedback wording only).
+function describeBeats(sig, d){
+  if(isIrregular8(sig)){ // e.g. 7/8 -> count quavers
+    const q = Math.round(d*2*100)/100;
+    if(Math.abs(q - Math.round(q)) < 1e-6){ const n = Math.round(q); return n + (n===1?' quaver':' quavers'); }
+    return fmtBeats(d);
+  }
+  const bu = beatUnit(sig);
+  const beats = Math.round((d/bu)*100)/100;
+  if(Math.abs(beats - Math.round(beats)) < 1e-6){ const n = Math.round(beats); return n + (n===1?' beat':' beats'); }
+  return fmtBeats(d);
+}
+// The missing length: "the whole bar" when it fills the bar, else the metre's beats.
+function describeMissing(sig, d, total){
+  if(eq(d, total)) return 'the whole bar';
+  return describeBeats(sig, d);
+}
+
+/* ---------- concept questions: Pre-primary & Year 1 ---------- */
+function makeConceptQuestion(yearIdx){
+  const y = YEARS[yearIdx];
+  if(yearIdx===0){ // Pre-primary
+    const qs = [
+      {
+        prompt:'Which row shows a steady beat?',
+        explain:'A steady beat is evenly spaced, like a heartbeat or a ticking clock.',
+        options:[
+          {html:beatRow([20,55,90,125]), correct:true},
+          {html:beatRow([20,45,105,120]), correct:false},
+          {html:beatRow([20,90,110,125]), correct:false},
+          {html:beatRow([20,35,50,125]), correct:false}
+        ]
+      },
+      {
+        prompt:'Which picture shows a long sound?',
+        explain:'A long sound lasts for a long time. A short sound is quick.',
+        options:[
+          {html:durationBar('long'), correct:true},
+          {html:durationBar('short'), correct:false},
+          {html:durationBar('silence'), correct:false},
+          {html:durationBar('short'), correct:false}
+        ]
+      },
+      {
+        prompt:'Which picture shows silence (no sound)?',
+        explain:'Silence is when there is no sound at all.',
+        options:[
+          {html:durationBar('silence'), correct:true},
+          {html:durationBar('long'), correct:false},
+          {html:durationBar('short'), correct:false},
+          {html:beatRow([30,60,90]), correct:false}
+        ]
+      },
+      {
+        prompt:'Which row keeps a steady beat with four sounds?',
+        explain:'Count 1–2–3–4. The sounds must be evenly spaced.',
+        options:[
+          {html:beatRow([20,52,84,116]), correct:true},
+          {html:beatRow([20,50,70,116]), correct:false},
+          {html:beatRow([20,32,96,116]), correct:false},
+          {html:beatRow([80]), correct:false}
+        ]
+      },
+      {
+        prompt:'Which picture shows a short sound?',
+        explain:'A short sound is quick — it does not last long.',
+        options:[
+          {html:durationBar('short'), correct:true},
+          {html:durationBar('long'), correct:false},
+          {html:durationBar('silence'), correct:false},
+          {html:beatRow([30,60,90]), correct:false}
+        ]
+      },
+      {
+        prompt:'Which row does NOT keep a steady beat?',
+        explain:'A steady beat is evenly spaced. The uneven row is not steady.',
+        options:[
+          {html:beatRow([20,45,105,120]), correct:true},
+          {html:beatRow([20,55,90,125]), correct:false},
+          {html:beatRow([20,52,84,116]), correct:false},
+          {html:beatRow([20,50,80,110]), correct:false}
+        ]
+      },
+      {
+        prompt:'Which row has two sounds?',
+        explain:'Count the sounds. This row has two.',
+        options:[
+          {html:beatRow([30,70]), correct:true},
+          {html:beatRow([20,50,80]), correct:false},
+          {html:beatRow([20,45,70,95]), correct:false},
+          {html:beatRow([60]), correct:false}
+        ]
+      }
+    ];
+    const q = pick(qs);
+    return {yearIdx, concept:true, prompt:q.prompt, explain:q.explain,
+            options:shuffle(q.options.map(o=>({...o})))};
+  }
+  // Year 1
+  const qs = [
+    {
+      prompt:'Which rhythm has two sounds on one beat?',
+      explain:'Two quavers (eighth notes) share one beat — say “ti-ti”.',
+      options:[
+        {atoms:[{beam:[{n:'quaver'},{n:'quaver'}]}], correct:true},
+        {atoms:[{n:'crotchet'}], correct:false},
+        {atoms:[{n:'minim'}], correct:false},
+        {atoms:[{r:'quaver-rest'}], correct:false}
+      ]
+    },
+    {
+      prompt:'Which rhythm has one sound on one beat?',
+      explain:'One crotchet (quarter note) lasts for one beat.',
+      options:[
+        {atoms:[{n:'crotchet'}], correct:true},
+        {atoms:[{beam:[{n:'quaver'},{n:'quaver'}]}], correct:false},
+        {atoms:[{n:'minim'}], correct:false},
+        {atoms:[{n:'quaver'}], correct:false}
+      ]
+    },
+    {
+      prompt:'Which rhythm has three sounds?',
+      explain:'Three quavers beamed together — say “ti-ti-ti”.',
+      options:[
+        {atoms:[{beam:[{n:'quaver'},{n:'quaver'},{n:'quaver'}]}], correct:true},
+        {atoms:[{beam:[{n:'quaver'},{n:'quaver'}]}], correct:false},
+        {atoms:[{n:'crotchet'}], correct:false},
+        {atoms:[{n:'quaver'}], correct:false}
+      ]
+    },
+    {
+      prompt:'Which rhythm has no sound on the beat (a rest)?',
+      explain:'A quaver rest means one half-beat of silence.',
+      options:[
+        {atoms:[{r:'quaver-rest'}], correct:true},
+        {atoms:[{n:'crotchet'}], correct:false},
+        {atoms:[{beam:[{n:'quaver'},{n:'quaver'}]}], correct:false},
+        {atoms:[{n:'minim'}], correct:false}
+      ]
+    },
+    {
+      prompt:'Which rhythm has four sounds?',
+      explain:'Four quavers beamed together — say “ti-ti-ti-ti”.',
+      options:[
+        {atoms:[{beam:[{n:'quaver'},{n:'quaver'},{n:'quaver'},{n:'quaver'}]}], correct:true},
+        {atoms:[{beam:[{n:'quaver'},{n:'quaver'}]}], correct:false},
+        {atoms:[{beam:[{n:'quaver'},{n:'quaver'},{n:'quaver'}]}], correct:false},
+        {atoms:[{n:'quaver'}], correct:false}
+      ]
+    },
+    {
+      prompt:'Which rhythm is silent (a rest)?',
+      explain:'A quaver rest is a half-beat of silence.',
+      options:[
+        {atoms:[{r:'quaver-rest'}], correct:true},
+        {atoms:[{n:'crotchet'}], correct:false},
+        {atoms:[{beam:[{n:'quaver'},{n:'quaver'}]}], correct:false},
+        {atoms:[{n:'quaver'}], correct:false}
+      ]
+    }
+  ];
+  const q = pick(qs);
+  return {yearIdx, concept:true, prompt:q.prompt, explain:q.explain,
+          options:shuffle(q.options.map(o=>({...o})))};
+}
+
+/* ============================================================
+   5. APP STATE + UI
+   ============================================================ */
+const state = { yearIdx:2, q:null, answered:false, selected:-1,
+                correct:0, total:0, streak:0, history:[] };
+
+const $ = id => document.getElementById(id);
+const LETTERS = ['A','B','C','D'];
+
+function toast(msg){
+  const t=$('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove('show'), 1600);
+}
+
+function buildTabs(){
+  const tabs=$('tabs');
+  tabs.innerHTML='';
+  YEARS.forEach((y,i)=>{
+    const b=document.createElement('button');
+    b.className='tab'+(i===state.yearIdx?' active':'');
+    b.textContent=y.id==='PP'?'Pre-primary':y.label;
+    b.onclick=()=>{ state.yearIdx=i; buildTabs(); renderLearn(); newQuestion(); };
+    tabs.appendChild(b);
+  });
+}
+
+function renderLearn(){
+  const y=YEARS[state.yearIdx];
+  $('learnTitle').textContent='Rhythms for '+(y.id==='PP'?'Pre-primary':y.label);
+  const ul=document.createElement('ul'); ul.className='learnlist';
+  y.rhythms.forEach(r=>{
+    const li=document.createElement('li');
+    li.innerHTML=`<span style="font-size:1rem">♪</span><span class="desc">${r}</span>`;
+    ul.appendChild(li);
+  });
+  $('learnList').innerHTML=''; $('learnList').appendChild(ul);
+}
+
+function newQuestion(reset){
+  state.q = makeQuestion(state.yearIdx);
+  state.answered=false; state.selected=-1;
+  if(reset){ /* keep score when switching year? we keep totals */ }
+  renderQuestion();
+}
+
+function renderQuestion(){
+  const q=state.q, y=YEARS[state.yearIdx];
+  $('yearLabel').textContent = y.id==='PP'?'Pre-primary':y.label;
+  $('topicLabel').textContent = q.concept ? 'Rhythm: beat, long and short'
+      : (q.sig ? ('Time signature ' + q.sig) : '');
+  $('prompt').textContent = q.prompt;
+  $('feedback').className='feedback';
+  $('feedback').innerHTML='';
+  $('hintText').textContent='';
+  $('nextBtn').disabled=true;
+  $('nextBtn').textContent='Next question →';
+
+  // bar
+  if(q.concept){
+    $('barwrap').innerHTML = `<div style="display:flex;align-items:center;gap:10px;min-height:80px;color:#6b6780;font-size:.9rem">Look at the four choices and pick the correct one.</div>`;
+  } else {
+    $('barwrap').innerHTML = renderBar(q.sig, q.cells, q.total);
+  }
+
+  // options
+  const opts=$('options'); opts.innerHTML='';
+  q.options.forEach((o,i)=>{
+    const b=document.createElement('button');
+    b.className='opt'; b.dataset.i=i;
+    b.innerHTML=`<span class="letter">${LETTERS[i]}</span>
+      <span class="glyph">${ o.html ? o.html : renderCell(o.atoms, q.sig) }</span>`;
+    b.onclick=()=>selectAnswer(i);
+    opts.appendChild(b);
+  });
+  updateStats();
+}
+
+function selectAnswer(i){
+  if(state.answered) return;
+  state.answered=true; state.selected=i;
+  const q=state.q;
+  const correctIdx = q.options.findIndex(o=>o.correct);
+  const buttons=[...document.querySelectorAll('.opt')];
+  buttons.forEach((b,j)=>{
+    b.disabled=true;
+    if(j===correctIdx) b.classList.add('correct');
+    else if(j===i) b.classList.add('wrong');
+    else b.classList.add('dim');
+  });
+  const ok = i===correctIdx;
+  state.total++;
+  if(ok){ state.correct++; state.streak++; } else { state.streak=0; }
+
+  const fb=$('feedback');
+  fb.className='feedback show '+(ok?'ok':'no');
+  fb.innerHTML = (ok
+    ? `<b>Correct!</b> ${q.explain}`
+    : `<b>Not quite.</b> The correct answer is <b>${LETTERS[correctIdx]}</b>. ${q.explain}`);
+
+  // add to teacher key
+  state.history.push({
+    year:YEARS[state.yearIdx].id, sig:q.sig||'—', correct:LETTERS[correctIdx],
+    desc: q.options[correctIdx].note || q.options[correctIdx].desc || describeAtoms(q.options[correctIdx].atoms || [])
+  });
+  renderKey();
+  updateStats();
+  $('nextBtn').disabled=false;
+}
+
+function describeAtoms(atoms){
+  if(!atoms || !atoms.length) return 'concept answer';
+  return atoms.map(a=>{
+    if(a.n) return SHORT_NAME[DUR[a.n]] || a.n;
+    if(a.r) return (SHORT_NAME[DUR[a.r]]||'rest') + ' rest';
+    if(a.beam){
+      if(a.triplet) return 'quaver triplet';
+      const q = a.beam.filter(m=>m.n!=='semiquaver').length;
+      const s = a.beam.filter(m=>m.n==='semiquaver').length;
+      const parts = [];
+      if(q) parts.push(q + (q>1?' quavers':' quaver'));
+      if(s) parts.push(s + (s>1?' semiquavers':' semiquaver'));
+      return 'beamed ' + parts.join(' + ');
+    }
+    if(a.tie) return 'tied notes';
+    return '';
+  }).join(' + ');
+}
+
+function updateStats(){
+  $('statCorrect').textContent=state.correct;
+  $('statTotal').textContent=state.total;
+  $('statStreak').textContent=state.streak;
+}
+
+function renderKey(){
+  const rows = state.history.slice(-12).reverse();
+  if(!rows.length){ $('keyList').innerHTML='<p class="tiny">No answers yet.</p>'; return; }
+  let html='<table class="key"><tr><th>Year</th><th>Time sig.</th><th>Answer</th><th>Rhythm</th></tr>';
+  rows.forEach(r=>{ html+=`<tr><td>${r.year}</td><td>${r.sig}</td><td><b>${r.correct}</b></td><td>${r.desc}</td></tr>`; });
+  html+='</table>';
+  $('keyList').innerHTML=html;
+}
+
+/* ---------- events ---------- */
+$('nextBtn').onclick = ()=>{ newQuestion(); };
+$('skipBtn').onclick = ()=>{ newQuestion(); toast('New question'); };
+$('resetBtn').onclick = ()=>{ state.correct=0; state.total=0; state.streak=0; state.history=[]; renderKey(); updateStats(); toast('Score reset'); };
+$('hintBtn').onclick = ()=>{
+  const q=state.q;
+  if(q.concept){ $('hintText').textContent='Hint: ' + q.explain; return; }
+  const target = q.target;
+  $('hintText').textContent = `Hint: this ${q.sig} bar lasts ${describeBeats(q.sig, q.total)}. The empty box must last ${describeMissing(q.sig, q.target, q.total)}.`;
+};
+document.addEventListener('keydown', e=>{
+  const testOpen = $('testOverlay').classList.contains('show');
+  if(testOpen){
+    if(e.key>='1' && e.key<='4'){
+      const i=+e.key-1;
+      if(test && test.questions[test.index].options[i]) chooseTestOption(i);
+    } else if(e.key==='Enter'){
+      if($('testQuiz').style.display!=='none'){ if(!$('testNext').disabled) nextTestQuestion(); }
+      else if($('testStart').style.display!=='none'){ beginTest(); }
+    }
+    return;
+  }
+  if(e.key>='1' && e.key<='4'){ const i=+e.key-1; if(!state.answered && state.q.options[i]) selectAnswer(i); }
+  else if(e.key==='Enter'){ if(state.answered) newQuestion(); }
+});
+
+/* ============================================================
+   6. TEST MODE — 10 questions per year + CSV export
+   ============================================================ */
+const REC_KEY = 'rq_results_v1';
+let test = null;
+
+/* A test is a fixed set of 10 questions for a year, so every
+   student in that year gets the same paper and the same answer key. */
+function makeTest(yearIdx){
+  const saved = seed;
+  seed = 424242 + yearIdx*7919;
+  const qs = []; const seen = {};
+  const keyOf = q => q.concept
+    ? 'C|' + q.prompt
+    : 'B|' + q.sig + '|' + q.cells.map(c => c.blank ? 'B'+c.dur : JSON.stringify(c.atoms)).join(',') + '|' + q.target;
+  const wholePositions = [0, 3, 7]; // spread some "fill the whole bar" questions through the paper
+  for(let i=0; i<10; i++){
+    const mode = wholePositions.indexOf(i) >= 0 ? 'whole' : 'part';
+    let q = null;
+    for(let t=0; t<40; t++){
+      const cand = makeQuestion(yearIdx, mode);
+      if(!seen[keyOf(cand)]){ q = cand; break; }
+    }
+    if(!q) q = makeQuestion(yearIdx, 'part'); // concept years repeat after the bank runs out
+    seen[keyOf(q)] = 1;
+    qs.push(q);
+  }
+  seed = saved;
+  return qs;
+}
+function yearLabel(yi){ return YEARS[yi].id==='PP' ? 'Pre-primary' : YEARS[yi].label; }
+function answerKeyFor(yi){ return makeTest(yi).map(q => LETTERS[q.options.findIndex(o=>o.correct)]); }
+
+function loadRecords(){ try{ return JSON.parse(localStorage.getItem(REC_KEY)) || []; }catch(e){ return []; } }
+function storeRecords(r){ try{ localStorage.setItem(REC_KEY, JSON.stringify(r)); }catch(e){} }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+/* ---------- overlay flow ---------- */
+function openTest(){
+  test = { yearIdx: state.yearIdx, name:'', questions: makeTest(state.yearIdx), index:0, answers:[], selected:-1 };
+  $('testTitle').textContent = yearLabel(state.yearIdx) + ' — 10-question test';
+  $('studentName').value = '';
+  $('testStart').style.display = 'block';
+  $('testQuiz').style.display = 'none';
+  $('testResult').style.display = 'none';
+  $('testOverlay').classList.add('show');
+  setTimeout(()=>$('studentName').focus(), 60);
+}
+function closeTest(){ $('testOverlay').classList.remove('show'); test = null; }
+function beginTest(){
+  if(!test) return;
+  const nm = $('studentName').value.trim();
+  if(!nm){ toast('Please enter your name'); $('studentName').focus(); return; }
+  test.name = nm; test.index = 0; test.answers = []; test.selected = -1;
+  $('testStart').style.display = 'none';
+  $('testQuiz').style.display = 'block';
+  $('testResult').style.display = 'none';
+  $('testName').textContent = nm;
+  renderTestQuestion();
+}
+function renderTestQuestion(){
+  const q = test.questions[test.index];
+  test.selected = -1;
+  $('testProgress').textContent = 'Question ' + (test.index+1) + ' of 10';
+  $('testBar').style.width = (test.index/10*100) + '%';
+  $('testPrompt').textContent = q.prompt;
+  $('testBarwrap').innerHTML = q.concept
+    ? '<div style="min-height:60px;color:#6b6780;font-size:.9rem">Choose the correct picture below.</div>'
+    : renderBar(q.sig, q.cells, q.total);
+  const opts = $('testOptions'); opts.innerHTML = '';
+  q.options.forEach((o,i)=>{
+    const b = document.createElement('button');
+    b.className = 'opt'; b.dataset.i = i;
+    b.innerHTML = '<span class="letter">' + LETTERS[i] + '</span><span class="glyph">' + (o.html ? o.html : renderCell(o.atoms, q.sig)) + '</span>';
+    b.onclick = ()=>chooseTestOption(i);
+    opts.appendChild(b);
+  });
+  $('testNext').disabled = true;
+  $('testNext').textContent = (test.index === 9) ? 'Finish test ✓' : 'Next →';
+}
+function chooseTestOption(i){
+  if(!test || test.selected === i) return;
+  test.selected = i;
+  [...document.querySelectorAll('#testOptions .opt')].forEach((b,j)=>{
+    b.classList.toggle('chosen', j === i);
+  });
+  $('testNext').disabled = false;
+}
+function nextTestQuestion(){
+  if(!test || test.selected < 0) return;
+  test.answers.push(test.selected);
+  if(test.index === 9){ finishTest(); return; }
+  test.index++;
+  renderTestQuestion();
+}
+function finishTest(){
+  const qs = test.questions;
+  const correct = qs.map(q => q.options.findIndex(o=>o.correct));
+  const wrong = []; let score = 0;
+  test.answers.forEach((a,i)=>{ if(a === correct[i]) score++; else wrong.push(i); });
+  test.correct = correct; test.wrong = wrong; test.score = score;
+  $('testBar').style.width = '100%';
+  $('testQuiz').style.display = 'none';
+  $('testResult').style.display = 'block';
+  $('resultTitle').textContent = test.name + ' — ' + yearLabel(test.yearIdx);
+  $('resultScore').innerHTML = 'You scored <b>' + score + ' / 10</b>. ' +
+    (wrong.length ? 'Questions answered incorrectly are shaded below.' : 'Perfect score!');
+  const qcell = q => q.concept
+      ? '<span class="qtext">' + esc(q.prompt) + '</span>'
+      : '<span class="qbar">' + renderBar(q.sig, q.cells, q.total) + '</span>';
+  let html = '<table class="review"><tr><th>Q</th><th>Question</th><th>Your answer</th><th>Correct answer</th><th></th></tr>';
+  qs.forEach((q,i)=>{
+    const ok = test.answers[i] === correct[i];
+    const cell = o => '<span class="glyph">' + (o.html ? o.html : renderCell(o.atoms, q.sig)) + '</span>';
+    html += '<tr class="' + (ok?'ok':'no') + '"><td>' + (i+1) + '</td>' +
+            '<td class="qcell">' + qcell(q) + '</td>' +
+            '<td>' + cell(q.options[test.answers[i]]) + '</td>' +
+            '<td>' + cell(q.options[correct[i]]) + '</td>' +
+            '<td class="mark">' + (ok?'✓':'✗') + '</td></tr>';
+  });
+  html += '</table>';
+  $('resultTable').innerHTML = html;
+  $('saveCsv').textContent = 'Save & download CSV';
+}
+function retakeTest(){
+  if(!test) return;
+  test.index = 0; test.answers = []; test.selected = -1; test.score = null;
+  $('testResult').style.display = 'none';
+  $('testQuiz').style.display = 'block';
+  renderTestQuestion();
+}
+function saveTestResult(){
+  if(!test || test.score == null) return;
+  const rec = {
+    name: test.name, yearIdx: test.yearIdx, yearLabel: yearLabel(test.yearIdx),
+    date: new Date().toISOString(), score: test.score, total: 10,
+    answers: test.answers.slice(), correct: test.correct.slice(), wrong: test.wrong.slice()
+  };
+  const recs = loadRecords(); recs.push(rec); storeRecords(recs);
+  renderRecords();
+  downloadCsv([test.yearIdx]);
+  $('saveCsv').textContent = 'Saved ✓ — download again';
+  toast('Saved to the class list and CSV downloaded');
+}
+
+/* ---------- CSV ---------- */
+function csvEscape(v){ v = String(v==null?'':v); return /[",\n\r]/.test(v) ? '"' + v.replace(/"/g,'""') + '"' : v; }
+function csvText(rows){ return '\uFEFF' + rows.map(r=>r.map(csvEscape).join(',')).join('\r\n') + '\r\n'; }
+function fmtDate(iso){
+  const d = new Date(iso), p = n=>String(n).padStart(2,'0');
+  return d.getFullYear() + '-' + p(d.getMonth()+1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+}
+function downloadText(filename, text){
+  const blob = new Blob([text], {type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 800);
+}
+function downloadCsv(yearIdxs){
+  const recs = loadRecords();
+  const header = ['Year'].concat(
+    ['Name','Date','Score','Q1','Q2','Q3','Q4','Q5','Q6','Q7','Q8','Q9','Q10','Wrong']);
+  const rows = [header];
+  yearIdxs.forEach(yi=>{
+    const label = yearLabel(yi);
+    const key = answerKeyFor(yi);
+    // correct answers on top (with the year level)
+    rows.push([label].concat(['ANSWER KEY','',''].concat(key).concat([''])));
+    // student responses underneath
+    recs.filter(r=>r.yearIdx===yi).sort((a,b)=> a.date < b.date ? -1 : 1).forEach(r=>{
+      const resp = r.answers.map((a,i)=> LETTERS[a] + (r.wrong.indexOf(i) >= 0 ? ' ✗' : ''));
+      const wrongList = r.wrong.map(i=>'Q'+(i+1)).join(', ');
+      rows.push([label].concat([r.name, fmtDate(r.date), r.score + '/10']).concat(resp).concat([wrongList]));
+    });
+  });
+  const fname = yearIdxs.length === 1
+    ? 'rhythm-quiz-results-' + YEARS[yearIdxs[0]].id + '.csv'
+    : 'rhythm-quiz-results-all-years.csv';
+  downloadText(fname, csvText(rows));
+}
+function renderRecords(){
+  const recs = loadRecords();
+  const box = $('recordsList');
+  if(!recs.length){ box.innerHTML = '<p class="tiny">No tests recorded yet.</p>'; return; }
+  let html = '<table class="key"><tr><th>Name</th><th>Year</th><th>Score</th><th>Date</th></tr>';
+  recs.slice().reverse().forEach(r=>{
+    html += '<tr><td>' + esc(r.name) + '</td><td>' + esc(r.yearLabel) + '</td><td>' + r.score + '/10</td><td>' + fmtDate(r.date) + '</td></tr>';
+  });
+  html += '</table>';
+  box.innerHTML = html;
+}
+
+/* ---------- test + results events ---------- */
+$('startTestBtn').onclick = openTest;
+$('testClose').onclick = closeTest;
+$('testQuit').onclick = closeTest;
+$('testBegin').onclick = beginTest;
+$('testNext').onclick = nextTestQuestion;
+$('retake').onclick = retakeTest;
+$('saveCsv').onclick = saveTestResult;
+$('closeResult').onclick = closeTest;
+$('studentName').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); beginTest(); } });
+$('csvYearBtn').onclick = ()=>{ if(!loadRecords().some(r=>r.yearIdx===state.yearIdx)){ toast('No results for this year yet'); return; } downloadCsv([state.yearIdx]); };
+$('csvAllBtn').onclick = ()=>{
+  const years = [...new Set(loadRecords().map(r=>r.yearIdx))].sort((a,b)=>a-b);
+  if(!years.length){ toast('No results saved yet'); return; }
+  downloadCsv(years);
+};
+$('clearRecordsBtn').onclick = ()=>{
+  if(!loadRecords().length){ toast('Nothing to clear'); return; }
+  if(confirm('Delete all saved test results from this browser? (Download the CSV first if you need a copy.)')){
+    storeRecords([]); renderRecords(); toast('Results cleared');
+  }
+};
+
+/* ============================================================
+   6b. SUBMIT TO CLASS GOOGLE SHEET (additive; internet only)
+   ------------------------------------------------------------
+   Off by default. Existing localStorage + CSV behaviour is
+   unchanged. To enable, paste your Apps Script Web App URL into
+   SHEET_SUBMIT.url (and optionally a client ID). See
+   GOOGLE-SHEET-SUBMIT.md for the Apps Script and setup steps.
+   ============================================================ */
+const SHEET_SUBMIT = {
+  url: 'https://script.google.com/a/macros/lakelandshs.wa.edu.au/s/AKfycbzLivHIkunDDjo8uh_qAJN2AwyQsd4M6pkZUCVgdmMsJynNc3JtzjnywnzZvUtGJKzxkQ/exec',
+  clientId: ''   // leave '' for same-domain (Mode 1); set for "Sign in with Google" (Mode 2)
+};
+let gsiToken = null;   // holds a Google OAuth access token after sign-in
+
+function loadGsi(cb){
+  if(!SHEET_SUBMIT.clientId || (window.google && google.accounts)) return cb();
+  const s = document.createElement('script');
+  s.src = 'https://accounts.google.com/gsi/client';
+  s.async = s.defer = true; s.onload = cb;
+  document.head.appendChild(s);
+}
+function googleSignInThenSubmit(){
+  loadGsi(()=>{
+    const st = $('sheetStatus');
+    if(!(window.google && google.accounts && google.accounts.oauth2)){
+      st.textContent = 'Could not load Google sign-in'; submitToSheet(); return;
+    }
+    const client = google.accounts.oauth2.initTokenClient({
+      client_id: SHEET_SUBMIT.clientId,
+      scope: 'openid email profile',
+      prompt: 'select_account',   // always show the Google account chooser
+      callback: resp=>{ gsiToken = resp.access_token || ''; submitToSheet(); },
+      error_callback: err=>{ st.textContent = 'Google sign-in cancelled' + (err && err.type ? ' (' + err.type + ')' : ''); }
+    });
+    client.requestAccessToken();
+  });
+}
+function submitToSheet(){
+  if(!test || test.score == null) return;
+  const payload = {
+    accessToken: gsiToken || '',
+    name:     test.name,
+    year:     yearLabel(test.yearIdx),
+    date:     new Date().toISOString(),
+    score:    test.score + '/10',
+    responses: test.answers.map(a => LETTERS[a]),
+    wrong:    test.wrong.map(i => 'Q' + (i+1)).join(', ')
+  };
+  const btn = $('sheetSubmit'), st = $('sheetStatus');
+  btn.disabled = true; st.textContent = 'Submitting…';
+  fetch(SHEET_SUBMIT.url, {
+    method : 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // text/plain avoids a CORS preflight
+    body   : JSON.stringify(payload)
+  })
+  .then(r => r.json())
+  .then(res=>{
+    if(res && res.ok){
+      st.textContent = 'Saved to class sheet' + (res.email ? ' as ' + res.email : '');
+      btn.textContent = 'Submitted ✓';
+    } else {
+      st.textContent = 'Could not save: ' + ((res && res.error) || 'unknown error');
+      btn.disabled = false;
+    }
+  })
+  .catch(()=>{
+    st.textContent = 'Could not reach the sheet (offline?). CSV still works.';
+    btn.disabled = false;
+  });
+}
+// Reveal + wire the button only when configured (app is unchanged otherwise).
+if(SHEET_SUBMIT.url){
+  const sb = $('sheetSubmit');
+  sb.style.display = '';
+  sb.onclick = ()=> SHEET_SUBMIT.clientId ? googleSignInThenSubmit() : submitToSheet();
+}
+
+/* ---------- boot ---------- */
+buildTabs();
+renderLearn();
+newQuestion();
+renderKey();
+updateStats();
+renderRecords();
+</script>
+</body>
+</html>

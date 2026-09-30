@@ -1,0 +1,11 @@
+# macOS
+.DS_Store
+
+# Build artifact (regenerate with: zip -rX rhythm-quiz-package.zip rhythm-quiz-package)
+rhythm-quiz-package.zip
+
+# Keep the standalone file (it is a shipped single-file deliverable),
+# even though it is generated from rhythm-quiz-package/index.html + lib/vexflow.min.js.
+
+# Reference PDFs from SCSA (curriculum source) — kept locally, not published.
+The-Arts_Music_Scope-and-*.pdf
