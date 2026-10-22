@@ -31,7 +31,7 @@
   }
   header h1{margin:0 0 4px; font-size:1.35rem; letter-spacing:.2px}
   header p{margin:0; opacity:.85; font-size:.85rem}
-  .wrap{max-width:1080px; margin:0 auto; padding:0 16px}
+  .wrap{max-width:1400px; margin:0 auto; padding:0 16px}
   .yearbar{
     position:sticky; top:0; z-index:20; background:#fff; border-bottom:1px solid var(--line);
     box-shadow:0 2px 10px rgba(30,20,80,.05);
@@ -45,8 +45,23 @@
   .tab:hover{border-color:var(--brand2); color:var(--brand)}
   .tab.active{background:var(--brand); border-color:var(--brand); color:#fff}
   main{padding:18px 0 60px}
-  .grid{display:grid; grid-template-columns:1.55fr 1fr; gap:16px}
-  @media (max-width:820px){ .grid{grid-template-columns:1fr} }
+  /* guide (left) | quiz | score & results (right)
+     NB: the quiz column keeps its automatic minimum, because the answer
+     options have a fixed intrinsic width (~702px). Only add the third
+     column once the viewport can actually hold all three. */
+  .grid{display:grid; grid-template-columns:290px 1.55fr 1fr; gap:16px}
+  @media (max-width:1399px){
+    /* not enough width for three columns: keep the guide on the left,
+       stacked above the quiz, with the score column beside them */
+    .grid{grid-template-columns:1.55fr 1fr}
+    .guide{grid-column:1; grid-row:1}
+    .grid > section{grid-column:1; grid-row:2}
+    .grid > aside:not(.guide){grid-column:2; grid-row:1 / span 2}
+  }
+  @media (max-width:820px){
+    .grid{grid-template-columns:1fr}
+    .guide,.grid > section,.grid > aside:not(.guide){grid-column:1; grid-row:auto}
+  }
   .card{background:var(--card); border:1px solid var(--line); border-radius:16px; padding:18px}
   .card h2{margin:0 0 10px; font-size:1rem}
   .eyebrow{font-size:.72rem; text-transform:uppercase; letter-spacing:.12em; color:var(--brand); font-weight:700}
@@ -92,6 +107,22 @@
   .learnlist li:last-child{border-bottom:none}
   .learnlist .desc{font-size:.82rem; color:var(--muted)}
   .learnlist .desc b{color:var(--ink)}
+  /* --- note values reference guide (left column) --- */
+  .guide{align-self:start}
+  .reftable{width:100%; max-width:480px; margin:0 auto; border-collapse:collapse; font-size:.76rem}
+  .reftable th,.reftable td{padding:5px 3px; border-bottom:1px dashed var(--line); text-align:left; vertical-align:middle}
+  .reftable thead th{
+    font-size:.64rem; text-transform:uppercase; letter-spacing:.05em; color:var(--muted);
+    border-bottom:1px solid var(--line); line-height:1.15;
+  }
+  .reftable tbody tr:last-child td{border-bottom:none}
+  .reftable td.nm{font-weight:600; line-height:1.2}
+  .reftable td.nm .us{display:block; font-weight:400; font-size:.68rem; color:var(--muted); line-height:1.2}
+  .reftable td.num,.reftable th.num{text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums}
+  .reftable thead th.num{white-space:normal}
+  .reftable td.sym,.reftable td.symr{text-align:center; padding:2px 2px}
+  .reftable td.symr .none{color:var(--line); font-weight:700}
+  .reftable .refsym{display:block; margin:0 auto}
   .sigchip{display:inline-block; background:#f0edff; color:var(--brand); border-radius:6px; padding:1px 7px; font-weight:700; font-size:.78rem; margin-right:5px}
   .hint{font-size:.82rem; color:var(--muted); margin-top:8px}
   .keypanel{display:none}
@@ -162,6 +193,26 @@
 
 <main class="wrap">
   <div class="grid">
+    <!-- NOTE VALUES REFERENCE GUIDE (left) -->
+    <aside class="guide">
+      <div class="card">
+        <h2>Reference Guide: Note Values</h2>
+        <p class="tiny">Each note value is shown with its matching rest. Fraction is of a semibreve (whole note). Beats are counted in 4/4 time, where a crotchet = 1 beat.</p>
+        <table class="reftable">
+          <thead>
+            <tr>
+              <th scope="col">Note</th>
+              <th scope="col">Symbol</th>
+              <th scope="col">Rest</th>
+              <th scope="col" class="num">Frac&shy;tion</th>
+              <th scope="col" class="num">Beats<br>in 4/4</th>
+            </tr>
+          </thead>
+          <tbody id="refBody"></tbody>
+        </table>
+      </div>
+    </aside>
+
     <!-- QUIZ -->
     <section>
       <div class="card">
@@ -290,7 +341,8 @@ const DUR = {
   'quaver': 0.5, 'dotted-semiquaver': 0.375, 'semiquaver': 0.25,
   'semibreve-rest': 4, 'dotted-minim-rest': 3, 'minim-rest': 2,
   'dotted-crotchet-rest': 1.5, 'crotchet-rest': 1,
-  'quaver-rest': 0.5, 'dotted-quaver-rest': 0.75
+  'quaver-rest': 0.5, 'dotted-quaver-rest': 0.75,
+  'semiquaver-rest': 0.25, 'dotted-semiquaver-rest': 0.375
 };
 
 const NICE_NAME = {
@@ -309,40 +361,61 @@ function notehead(cx, filled){
 function stem(cx, to = STEM_TOP){
   return `<line x1="${cx+6.2}" y1="${CY-2}" x2="${cx+6.2}" y2="${to}" stroke="#161226" stroke-width="1.8"/>`;
 }
-function dotat(cx){ return `<circle cx="${cx}" cy="${CY}" r="2.5" fill="#161226"/>`; }
+function dotat(cx, cy){ return `<circle cx="${cx}" cy="${cy==null?CY:cy}" r="2.5" fill="#161226"/>`; }
 function flagAt(x, y){
   return `<path d="M ${x} ${y} c 9 3.5 12 10 4.5 18 c 1.5 -8 -1.5 -12 -4.5 -13.5 z" fill="#161226"/>`;
 }
-function restGlyph(kind, x){
-  switch(kind){
-    case 'semibreve-rest':   return {svg:`<rect x="${x+5}" y="59" width="17" height="6.5" fill="#161226"/>`, w:28};
-    case 'minim-rest':       return {svg:`<rect x="${x+5}" y="52" width="17" height="6.5" fill="#161226"/>`, w:28};
-    case 'dotted-minim-rest':return {svg:`<rect x="${x+5}" y="52" width="17" height="6.5" fill="#161226"/>`+dotat(x+27), w:38};
-    case 'dotted-crotchet-rest':return {svg:`<rect x="${x+5}" y="52" width="17" height="6.5" fill="#161226"/>`+dotat(x+27), w:38};
-    case 'crotchet-rest':
-      return {svg:`<path d="M ${x+13} 42
+// An augmentation dot on a REST is NOT placed on the notehead line (CY=70).
+// VexFlow puts every rest dot in the space above the middle staff line, which
+// is y=55 in these coordinates (staff lines 40/50/60/70/80). Measured from
+// VexFlow 3.0.9 output, so the fallback matches the primary renderer.
+const REST_DOT_Y = 55;
+
+function crotchetRestPath(x){
+  return `<path d="M ${x+13} 42
         c -6 4 -7 8 -1 11
         c 8 4 7 8 1 11
         c -5 3 -6 6 -1 9
         c -3 -6 2 -8 6 -10
         c 7 -4 6 -9 -1 -13
-        c -5 -3 -4 -5 0 -8 z" fill="#161226"/>`, w:28};
+        c -5 -3 -4 -5 0 -8 z" fill="#161226"/>`;
+}
+function quaverRestPath(x){
+  return `<path d="M ${x+15} 42
+        c -7 2 -10 7 -5 11
+        c -5 3 -8 8 -9 12
+        l 2.4 0
+        c 2 -6 6 -10 11 -12
+        c 4 -2 3 -6 0 -8
+        c -2 -2 -2 -4 0 -5 z" fill="#161226"/>`;
+}
+// 16th (semiquaver) rest. The hand-drawn set had no glyph for this at all,
+// so it silently rendered as nothing. Rather than hand-draw one blind, this is
+// VexFlow's own 16th-rest outline (MIT licence - see LICENSES.md), shifted into
+// this file's staff coordinates. Its natural size (13x27) already matches the
+// hand-drawn quaver rest (14x25), so no scaling is needed.
+const SEMIQUAVER_REST_D = "M53 80M56.2292 88.45208C57.29624 88.45208,58.3352 88.08704,59.26184 87.60968C59.34608 87.60968,59.43032 87.69392,59.43032 87.80624C59.43032 87.83432,59.40224 87.89048,59.40224 87.91856L55.55528 99.3752C55.55528 99.40328,55.49912 99.45944,55.49912 99.48752C55.49912 99.82448,55.86416 100.2176,56.76272 100.2176C57.94208 100.2176,58.13864 99.74024,58.30712 99.29096L62.99648 83.87504C64.03544 80.44928,64.7936 77.72552,64.7936 77.72552C64.7936 77.72552,65.80448 74.18744,65.88872 73.65392C65.88872 73.56968,65.94488 73.5416,65.94488 73.48544C65.94488 73.2608,65.60792000000001 73.09232,65.52368 73.03616C65.32712000000001 73.03616,65.2148 73.1204,65.10248 73.20464C64.7936 73.45736,62.77184 75.87224,61.424 75.9284L61.424 75.5072C61.424 73.9628,60.18848 72.75536,58.67216 72.75536C57.15584 72.75536,55.920320000000004 73.9628,55.920320000000004 75.5072C55.920320000000004 77.16392,57.60512 78.25904,59.14952 78.25904C60.244640000000004 78.25904,61.36784 77.894,62.29448 77.36048C62.43488 77.3324,62.49104 77.30432,62.57528 77.30432C62.71568 77.30432,62.77184 77.36048,62.77184 77.58512C62.77184 78.23096,60.722 84.24008,60.4412 84.85784C60.10424 85.616,59.0372 86.09336,58.44752 86.09336C58.50368 85.95296,58.50368 85.81256,58.50368 85.70024C58.50368 84.15584,57.24008 82.9484,55.75184 82.9484C54.20744 82.9484,53 84.15584,53 85.70024C53 87.35696,54.6848 88.45208,56.2292 88.45208";
+function semiquaverRestPath(x){
+  return `<g transform="translate(${x-51},-32.76)"><path d="${SEMIQUAVER_REST_D}" fill="#161226"/></g>`;
+}
+
+function restGlyph(kind, x){
+  switch(kind){
+    case 'semibreve-rest':   return {svg:`<rect x="${x+5}" y="59" width="17" height="6.5" fill="#161226"/>`, w:28};
+    case 'minim-rest':       return {svg:`<rect x="${x+5}" y="52" width="17" height="6.5" fill="#161226"/>`, w:28};
+    case 'dotted-minim-rest':return {svg:`<rect x="${x+5}" y="52" width="17" height="6.5" fill="#161226"/>`+dotat(x+27,REST_DOT_Y), w:38};
+    case 'dotted-crotchet-rest':
+      return {svg:crotchetRestPath(x)+dotat(x+27,REST_DOT_Y), w:40};
+    case 'crotchet-rest':
+      return {svg:crotchetRestPath(x), w:28};
     case 'quaver-rest':
-      return {svg:`<path d="M ${x+15} 42
-        c -7 2 -10 7 -5 11
-        c -5 3 -8 8 -9 12
-        l 2.4 0
-        c 2 -6 6 -10 11 -12
-        c 4 -2 3 -6 0 -8
-        c -2 -2 -2 -4 0 -5 z" fill="#161226"/>`, w:28};
+      return {svg:quaverRestPath(x), w:28};
     case 'dotted-quaver-rest':
-      return {svg:`<path d="M ${x+15} 42
-        c -7 2 -10 7 -5 11
-        c -5 3 -8 8 -9 12
-        l 2.4 0
-        c 2 -6 6 -10 11 -12
-        c 4 -2 3 -6 0 -8
-        c -2 -2 -2 -4 0 -5 z" fill="#161226"/>`+dotat(x+29), w:40};
+      return {svg:quaverRestPath(x)+dotat(x+29,REST_DOT_Y), w:40};
+    case 'semiquaver-rest':
+      return {svg:semiquaverRestPath(x), w:34};
+    case 'dotted-semiquaver-rest':
+      return {svg:semiquaverRestPath(x)+dotat(x+29,REST_DOT_Y), w:46};
     default: return {svg:'', w:28};
   }
 }
@@ -491,7 +564,8 @@ const VEX_BASE = {
   'dotted-semiquaver':'16','semiquaver':'16',
   'semibreve-rest':'w','dotted-minim-rest':'h','minim-rest':'h',
   'dotted-crotchet-rest':'q','crotchet-rest':'q',
-  'dotted-quaver-rest':'8','quaver-rest':'8'
+  'dotted-quaver-rest':'8','quaver-rest':'8',
+  'dotted-semiquaver-rest':'16','semiquaver-rest':'16'
 };
 const isDottedName = name => name.indexOf('dotted-') === 0;
 
@@ -1098,6 +1172,121 @@ function renderLearn(){
   $('learnList').innerHTML=''; $('learnList').appendChild(ul);
 }
 
+/* ---------- note values reference guide ---------- */
+// One row per note value, with the matching rest shown alongside it.
+// Symbols are drawn from VexFlow (see vfRefGlyph) so the guide matches the
+// notation used in the questions; the hand-drawn set is the offline fallback.
+const REF_ROWS = [
+  {id:'semibreve',       name:'Semibreve',       us:'whole note',          rest:'semibreve-rest',       restUs:'whole rest',           frac:'1/1',  beats:'4'},
+  {id:'dotted-minim',    name:'Dotted minim',    us:'dotted half note',    rest:'dotted-minim-rest',    restUs:'dotted half rest',     frac:'3/4',  beats:'3'},
+  {id:'minim',           name:'Minim',           us:'half note',           rest:'minim-rest',           restUs:'half rest',            frac:'1/2',  beats:'2'},
+  {id:'dotted-crotchet', name:'Dotted crotchet', us:'dotted quarter note', rest:'dotted-crotchet-rest', restUs:'dotted quarter rest',  frac:'3/8',  beats:'1½'},
+  {id:'crotchet',        name:'Crotchet',        us:'quarter note',        rest:'crotchet-rest',        restUs:'quarter rest',         frac:'1/4',  beats:'1'},
+  {id:'dotted-quaver',   name:'Dotted quaver',   us:'dotted eighth note',  rest:'dotted-quaver-rest',   restUs:'dotted eighth rest',   frac:'3/16', beats:'¾'},
+  {id:'quaver',          name:'Quaver',          us:'eighth note',         rest:'quaver-rest',          restUs:'eighth rest',          frac:'1/8',  beats:'½'},
+  {id:'semiquaver',      name:'Semiquaver',      us:'sixteenth note',      rest:'semiquaver-rest',      restUs:'sixteenth rest',       frac:'1/16', beats:'¼'}
+];
+
+// ---- symbol sources --------------------------------------------------------
+// Preferred: VexFlow's engraved glyphs, so the guide shows exactly the notation
+// the questions use. VexFlow emits glyphs as plain <path> elements (no <text>,
+// no font file), so the result stays self-contained and works offline.
+function vfRefGlyph(id){
+  if(!VF) return null;
+  const host=document.createElement('div');
+  host.style.cssText='position:absolute;left:-9999px;top:0;width:0;height:0;overflow:hidden';
+  document.body.appendChild(host);
+  let out=null;
+  try{
+    const renderer=new VF.Renderer(host, VF.Renderer.Backends.SVG);
+    renderer.resize(240,200);
+    const ctx=renderer.getContext();
+    const stave=new VF.Stave(0,20,220);
+    if(VF.Barline && VF.Barline.type){
+      stave.setBegBarType(VF.Barline.type.NONE);
+      stave.setEndBarType(VF.Barline.type.NONE);
+    }
+    stave.setContext(ctx).draw();
+    VF.Formatter.FormatAndDraw(ctx, stave, [mkNote(id)]);
+    const svg=host.querySelector('svg');
+    if(svg){
+      // Staff lines are long and perfectly flat (height 0) - everything else
+      // that was drawn is the glyph itself.
+      const els=[...svg.querySelectorAll('path,rect,circle,ellipse')]
+        .filter(el=>{ const b=el.getBBox(); return !(b.height < 0.5 && b.width > 50); });
+      if(els.length){
+        let x0=Infinity, y0=Infinity, x1=-Infinity, y1=-Infinity;
+        els.forEach(el=>{
+          const b=el.getBBox();
+          x0=Math.min(x0,b.x); y0=Math.min(y0,b.y);
+          x1=Math.max(x1,b.x+b.width); y1=Math.max(y1,b.y+b.height);
+        });
+        out={ markup:els.map(el=>el.outerHTML).join(''), box:{x:x0,y:y0,w:x1-x0,h:y1-y0} };
+      }
+    }
+  }catch(e){ out=null; }
+  host.remove();
+  return out;
+}
+
+// Fallback: the hand-drawn SVG set, used when VexFlow is unavailable (e.g. this
+// file copied on its own without lib/vexflow.min.js). Bounds are measured with
+// getBBox() so framing is by real ink, not the layout advance width.
+function handRefGlyph(id){
+  const g = /-rest$/.test(id) ? restGlyph(id,0) : singleGlyph(id,0);
+  if(!g || !g.svg) return null;
+  const NS='http://www.w3.org/2000/svg';
+  const host=document.createElementNS(NS,'svg');
+  host.setAttribute('width','1'); host.setAttribute('height','1');
+  host.setAttribute('style','position:absolute;left:-9999px;top:0;overflow:hidden');
+  const grp=document.createElementNS(NS,'g');
+  grp.innerHTML=g.svg;
+  host.appendChild(grp);
+  document.body.appendChild(host);
+  let b=null;
+  try{ b=grp.getBBox(); }catch(e){ b=null; }
+  document.body.removeChild(host);
+  if(!b || !b.width || !b.height) return null;
+  return { markup:g.svg, box:{x:b.x,y:b.y,w:b.width,h:b.height} };
+}
+
+// Tallest symbol renders this many px tall. One scale is shared by every
+// symbol so relative sizes stay true (a semibreve rest really is a short bar).
+const REF_SYMBOL_H = 50;
+
+function renderReference(){
+  const body=$('refBody');
+  if(!body) return;
+  const source = VF ? vfRefGlyph : handRefGlyph;
+  const got={};
+  REF_ROWS.forEach(r=>{
+    got[r.id]=source(r.id);
+    if(r.rest) got[r.rest]=source(r.rest);
+  });
+  const boxes=Object.keys(got).map(k=>got[k]).filter(Boolean).map(g=>g.box);
+  if(!boxes.length){ body.innerHTML=''; return; }
+  const scale = REF_SYMBOL_H / Math.max.apply(null, boxes.map(b=>b.h));
+  const symbol=id=>{
+    const g=got[id];
+    if(!g) return '';
+    const b=g.box;
+    // VexFlow draws in black; match the app's ink colour.
+    const markup=g.markup.replace(/"black"/g,'"#161226"');
+    const vb=[b.x,b.y,b.w,b.h].map(v=>v.toFixed(2)).join(' ');
+    return `<svg class="refsym" width="${(b.w*scale).toFixed(1)}" height="${(b.h*scale).toFixed(1)}" viewBox="${vb}" aria-hidden="true" focusable="false">${markup}</svg>`;
+  };
+  body.innerHTML = REF_ROWS.map(r=>{
+    const small = r.us + (r.restUs ? ' · ' + r.restUs : '');
+    return `<tr>
+      <td class="nm">${r.name}<span class="us">${small}</span></td>
+      <td class="sym">${symbol(r.id)}</td>
+      <td class="symr">${r.rest ? symbol(r.rest) : '<span class="none">—</span>'}</td>
+      <td class="num">${r.frac}</td>
+      <td class="num">${r.beats}</td>
+    </tr>`;
+  }).join('');
+}
+
 function newQuestion(reset){
   state.q = makeQuestion(state.yearIdx);
   state.answered=false; state.selected=-1;
@@ -1567,6 +1756,7 @@ if(SHEET_SUBMIT.url){
 /* ---------- boot ---------- */
 buildTabs();
 renderLearn();
+renderReference();
 newQuestion();
 renderKey();
 updateStats();
