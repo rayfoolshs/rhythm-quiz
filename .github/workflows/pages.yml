@@ -26,7 +26,12 @@ jobs:
       - name: Assemble site (quiz package at the site root)
         run: |
           mkdir -p _site
-          cp -r rhythm-quiz-package/index.html rhythm-quiz-package/lib _site/
+          cp -r \
+            rhythm-quiz-package/index.html \
+            rhythm-quiz-package/lib \
+            rhythm-quiz-package/lakeland-logo.svg \
+            rhythm-quiz-package/lakeland-logo-inverse.svg \
+            _site/
 
       - name: Configure Pages
         uses: actions/configure-pages@v5

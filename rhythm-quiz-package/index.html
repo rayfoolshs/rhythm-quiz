@@ -7,12 +7,14 @@
 <style>
   :root{
     --ink:#161226;
-    --muted:#6b6780;
-    --line:#e2e0ee;
-    --bg:#f6f5fb;
+    --muted:#6b6f80;
+    --line:#e2e5ee;
+    --bg:#f5f6fa;
     --card:#ffffff;
-    --brand:#5b45c9;
-    --brand2:#7c5cff;
+    --brand:#202b64;    /* Lakeland navy  */
+    --brand2:#3d4a94;   /* lighter navy   */
+    --accent:#0a8440;   /* Lakeland green */
+    --accent2:#c1d52d;  /* Lakeland lime  */
     --good:#15915b;
     --goodbg:#e7f7ef;
     --bad:#c23b52;
@@ -26,9 +28,13 @@
     color:var(--ink); background:var(--bg); line-height:1.45;
   }
   header{
-    background:linear-gradient(135deg,#3b2d86,#5b45c9 55%,#7c5cff);
-    color:#fff; padding:20px 22px 16px;
+    background:linear-gradient(135deg,#141b45,#202b64 55%,#3d4a94);
+    color:#fff; padding:18px 22px 16px;
+    border-bottom:4px solid var(--accent2);
   }
+  header .wrap{display:flex; align-items:center; gap:18px}
+  .brandlogo{display:block; height:74px; width:auto; flex:0 0 auto}
+  @media (max-width:560px){ .brandlogo{height:54px} }
   header h1{margin:0 0 4px; font-size:1.35rem; letter-spacing:.2px}
   header p{margin:0; opacity:.85; font-size:.85rem}
   .wrap{max-width:1400px; margin:0 auto; padding:0 16px}
@@ -66,7 +72,7 @@
   .card h2{margin:0 0 10px; font-size:1rem}
   .eyebrow{font-size:.72rem; text-transform:uppercase; letter-spacing:.12em; color:var(--brand); font-weight:700}
   .prompt{font-size:1.02rem; margin:6px 0 14px; font-weight:600}
-  .barwrap{background:#fbfaff; border:1px solid var(--line); border-radius:12px; padding:10px 12px; overflow-x:auto}
+  .barwrap{background:#fafbfe; border:1px solid var(--line); border-radius:12px; padding:10px 12px; overflow-x:auto}
   .options{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:16px}
   @media (max-width:560px){ .options{grid-template-columns:1fr} }
   .opt{
@@ -75,7 +81,7 @@
   }
   .opt:hover{border-color:var(--brand2); transform:translateY(-1px)}
   .opt .letter{
-    flex:0 0 auto; width:26px; height:26px; border-radius:50%; background:#f0edff; color:var(--brand);
+    flex:0 0 auto; width:26px; height:26px; border-radius:50%; background:#eef1f9; color:var(--brand);
     display:grid; place-items:center; font-weight:800; font-size:.8rem;
   }
   .opt .glyph{overflow-x:auto; max-width:100%}
@@ -97,9 +103,9 @@
   }
   button.btn:hover{border-color:var(--brand2)}
   button.btn.primary{background:var(--brand); color:#fff; border-color:var(--brand)}
-  button.btn.primary:hover{background:#4a37b0}
+  button.btn.primary:hover{background:#182152}
   .stats{display:flex; gap:16px; margin-top:4px}
-  .stat{flex:1; background:#fbfaff; border:1px solid var(--line); border-radius:12px; padding:10px; text-align:center}
+  .stat{flex:1; background:#fafbfe; border:1px solid var(--line); border-radius:12px; padding:10px; text-align:center}
   .stat .n{font-size:1.4rem; font-weight:800; color:var(--brand)}
   .stat .l{font-size:.72rem; color:var(--muted); text-transform:uppercase; letter-spacing:.08em}
   .learnlist{list-style:none; margin:0; padding:0}
@@ -123,7 +129,7 @@
   .reftable td.sym,.reftable td.symr{text-align:center; padding:2px 2px}
   .reftable td.symr .none{color:var(--line); font-weight:700}
   .reftable .refsym{display:block; margin:0 auto}
-  .sigchip{display:inline-block; background:#f0edff; color:var(--brand); border-radius:6px; padding:1px 7px; font-weight:700; font-size:.78rem; margin-right:5px}
+  .sigchip{display:inline-block; background:#eef1f9; color:var(--brand); border-radius:6px; padding:1px 7px; font-weight:700; font-size:.78rem; margin-right:5px}
   .hint{font-size:.82rem; color:var(--muted); margin-top:8px}
   .keypanel{display:none}
   .keypanel.show{display:block}
@@ -134,14 +140,14 @@
     padding:10px 16px; border-radius:999px; font-size:.85rem; opacity:0; pointer-events:none; transition:.25s; z-index:50}
   .toast.show{opacity:1}
   .legend{font-size:.78rem; color:var(--muted); margin-top:10px}
-  .legend code{background:#f0edff; color:var(--brand); padding:1px 5px; border-radius:5px}
+  .legend code{background:#eef1f9; color:var(--brand); padding:1px 5px; border-radius:5px}
   .yearhead{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap}
   .yearhead h2{margin:0}
   .tiny{font-size:.78rem; color:var(--muted)}
   .footer{color:var(--muted); font-size:.75rem; margin-top:18px; text-align:center}
   /* ---------- test mode ---------- */
   .btn.test{background:var(--brand2); color:#fff; border-color:var(--brand2)}
-  .btn.test:hover{background:#6a49f0}
+  .btn.test:hover{background:#3d4a94}
   .btn.google{background:#fff; border:1px solid #dadce0; color:#3c4043}
   .btn.google:hover{border-color:#bdc1c6; background:#f8f9fa}
   .btn.google:disabled{opacity:.6; cursor:default}
@@ -156,9 +162,9 @@
   .field input:focus{outline:none; border-color:var(--brand2)}
   .modalbtns{display:flex; gap:8px; flex-wrap:wrap; margin-top:18px}
   .testtop{display:flex; justify-content:space-between; align-items:center; font-size:.85rem; color:var(--muted); font-weight:700}
-  .progress{height:8px; background:#ece9f8; border-radius:999px; overflow:hidden; margin:8px 0 4px}
+  .progress{height:8px; background:#e8ebf4; border-radius:999px; overflow:hidden; margin:8px 0 4px}
   .progress > div{height:100%; width:0; background:linear-gradient(90deg,var(--brand),var(--brand2)); transition:width .25s}
-  .opt.chosen{border-color:var(--brand2); background:#f4f0ff; box-shadow:0 0 0 3px #e6dfff}
+  .opt.chosen{border-color:var(--brand2); background:#eef2fb; box-shadow:0 0 0 3px #dde3f3}
   table.review{width:100%; border-collapse:collapse; margin-top:12px}
   table.review th,table.review td{border-bottom:1px solid var(--line); padding:6px 8px; text-align:left; vertical-align:middle}
   table.review th{font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:var(--muted)}
@@ -184,8 +190,11 @@
 <body>
 <header>
   <div class="wrap">
-    <h1>Rhythm Quiz — Complete the Bar</h1>
-    <p>Based on the WA Curriculum: The Arts — Music, Scope &amp; Sequence (Pre-primary–Year 10) Addendum. Choose the rhythm that completes the bar.</p>
+    <img class="brandlogo" src="lakeland-logo-inverse.svg" alt="Lakeland Senior High School" width="90" height="74">
+    <div>
+      <h1>Rhythm Quiz — Complete the Bar</h1>
+      <p>Based on the WA Curriculum: The Arts — Music, Scope &amp; Sequence (Pre-primary–Year 10) Addendum. Choose the rhythm that completes the bar.</p>
+    </div>
   </div>
 </header>
 
@@ -524,8 +533,8 @@ function svgBar(sig, cells, totalBeats){
   cells.forEach(c=>{
     if(c.blank){
       const w = Math.max(64, c.dur*78);
-      inner += `<rect x="${cursor+3}" y="30" width="${w-6}" height="60" rx="9" fill="#f4f0ff" stroke="#7c5cff" stroke-width="2" stroke-dasharray="6 5"/>`;
-      inner += `<text x="${cursor+w/2}" y="67" text-anchor="middle" font-size="28" font-weight="800" fill="#7c5cff">?</text>`;
+      inner += `<rect x="${cursor+3}" y="30" width="${w-6}" height="60" rx="9" fill="#eef2fb" stroke="#3d4a94" stroke-width="2" stroke-dasharray="6 5"/>`;
+      inner += `<text x="${cursor+w/2}" y="67" text-anchor="middle" font-size="28" font-weight="800" fill="#3d4a94">?</text>`;
       cursor += w + 12;
     } else {
       const r = drawAtoms(c.atoms, cursor);
@@ -540,7 +549,7 @@ function svgBar(sig, cells, totalBeats){
     ts = `<text x="20" y="62" font-size="21" font-weight="800" text-anchor="middle" fill="#161226">${n}</text>`
        + `<text x="20" y="84" font-size="21" font-weight="800" text-anchor="middle" fill="#161226">${d}</text>`;
   } else if(totalBeats){
-    ts = `<text x="16" y="78" font-size="15" font-weight="700" fill="#6b6780">${totalBeats} beats</text>`;
+    ts = `<text x="16" y="78" font-size="15" font-weight="700" fill="#6b6f80">${totalBeats} beats</text>`;
   }
   const barlines = `<line x1="0" y1="40" x2="0" y2="80" stroke="#161226" stroke-width="2.4"/>`
                  + `<line x1="${width}" y1="40" x2="${width}" y2="80" stroke="#161226" stroke-width="2.4"/>`;
@@ -740,11 +749,11 @@ function vexBar(sig, cells, totalBeats){
       const top = stave.getYForLine(0)-7, bottom = stave.getYForLine(4)+7;
       ctx.save();
       if(ctx.setLineDash) ctx.setLineDash([6,5]);
-      ctx.setStrokeStyle('#7c5cff'); ctx.setFillStyle('#f4f0ff');
+      ctx.setStrokeStyle('#3d4a94'); ctx.setFillStyle('#eef2fb');
       ctx.fillRect(left, top, right-left, bottom-top);
       ctx.beginPath(); ctx.rect(left, top, right-left, bottom-top); ctx.stroke();
       ctx.restore();
-      ctx.setFillStyle('#7c5cff'); ctx.setFont('Arial', 24, 'bold');
+      ctx.setFillStyle('#3d4a94'); ctx.setFont('Arial', 24, 'bold');
       ctx.fillText('?', (left+right)/2 - 8, stave.getYForLine(2)+9);
     }
   });
@@ -1308,7 +1317,7 @@ function renderQuestion(){
 
   // bar
   if(q.concept){
-    $('barwrap').innerHTML = `<div style="display:flex;align-items:center;gap:10px;min-height:80px;color:#6b6780;font-size:.9rem">Look at the four choices and pick the correct one.</div>`;
+    $('barwrap').innerHTML = `<div style="display:flex;align-items:center;gap:10px;min-height:80px;color:#6b6f80;font-size:.9rem">Look at the four choices and pick the correct one.</div>`;
   } else {
     $('barwrap').innerHTML = renderBar(q.sig, q.cells, q.total);
   }
@@ -1485,7 +1494,7 @@ function renderTestQuestion(){
   $('testBar').style.width = (test.index/10*100) + '%';
   $('testPrompt').textContent = q.prompt;
   $('testBarwrap').innerHTML = q.concept
-    ? '<div style="min-height:60px;color:#6b6780;font-size:.9rem">Choose the correct picture below.</div>'
+    ? '<div style="min-height:60px;color:#6b6f80;font-size:.9rem">Choose the correct picture below.</div>'
     : renderBar(q.sig, q.cells, q.total);
   const opts = $('testOptions'); opts.innerHTML = '';
   q.options.forEach((o,i)=>{
