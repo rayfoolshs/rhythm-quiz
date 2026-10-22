@@ -5,6 +5,13 @@ Western Australian Curriculum: The Arts — Music (Pre-primary–Year 10). It is
 **Rhythm** element from the Scope & Sequence Addendum. Ship it as a small package directory
 plus a single-file version and a zip.
 
+> **Revision history.**
+> **Rev 1** (§1–§9) is the original build: the quiz, the fixed 10-question test and the CSV
+> export.
+> **Rev 2** (§10–§12) adds the three features now shipped on `main`: the **Note Values
+> reference guide**, **Lakeland SHS branding**, and the optional **Google Sheet submit**
+> path. §7, §8 and §9 have been updated to match.
+
 ---
 
 ## 1. Source material
@@ -54,6 +61,8 @@ notes (early hand-drawn attempts had missing stems). Requirements:
   ties via `new StaveTie(...)`; tuplets via `new Tuplet(...)`; the SVGContext has no
   `strokeRect` (use `beginPath/rect/stroke`).
 - SVG output already includes a `viewBox`, so it scales responsively in tables.
+- The same renderer also draws the **Note Values reference guide** (see §10), so the guide
+  matches the notation used in the questions.
 
 ## 4. Practice mode (main screen)
 
@@ -106,11 +115,16 @@ Year,Name,Date,Score,Q1,Q2,Q3,Q4,Q5,Q6,Q7,Q8,Q9,Q10,Wrong
   build step, no server**.
 - Deliver as:
   - `rhythm-quiz-package/` → `index.html` + `lib/vexflow.min.js` + `README.md` + `LICENSES.md`
+    + the two school logos (`lakeland-logo.svg`, `lakeland-logo-inverse.svg`)
     (keep the HTML small by referencing the library),
-  - `rhythm-quiz-standalone.html` → the same quiz with VexFlow **inlined** so it is one file,
+  - `rhythm-quiz-standalone.html` → the same quiz with VexFlow **inlined** and the logo
+    embedded as a data URI, so it is one self-contained file with no external references,
   - `rhythm-quiz-package.zip` → zipped cleanly (no `__MACOSX`/resource forks),
-  - a top-level `README.md` explaining all three.
+  - a top-level `README.md` explaining all three,
+  - `Code.gs` + `GOOGLE-SHEET-SUBMIT.md` for the optional Sheet submit (see §12).
 - Regenerate the standalone and zip from the package `index.html` after every change.
+- Ship a GitHub Pages workflow (`.github/workflows/pages.yml`) that copies `index.html`,
+  `lib/`, and **both** logo SVGs to the site root.
 - Include VexFlow MIT licence text in `LICENSES.md` and attribution to SCSA for the curriculum.
 - Add validation (e.g. an assertion loop) that for many generated questions the bar totals
   equal the time signature, there is at least one given cell, and exactly one option matches
@@ -118,9 +132,9 @@ Year,Name,Date,Score,Q1,Q2,Q3,Q4,Q5,Q6,Q7,Q8,Q9,Q10,Wrong
 
 ## 8. Styling
 
-Clean, modern, accessible: purple brand palette, rounded cards, responsive grid that collapses
-to one column on small screens, sticky year tabs, clear feedback colours (green correct /
-red wrong), and a print-friendly stylesheet.
+Clean, modern, accessible: **Lakeland SHS navy** brand palette (see §11), rounded cards,
+responsive grid that collapses to one column on small screens, sticky year tabs, clear
+feedback colours (green correct / red wrong), and a print-friendly stylesheet.
 
 ## 9. Acceptance checklist
 
@@ -132,3 +146,58 @@ red wrong), and a print-friendly stylesheet.
 - [ ] CSV has the `Year,Name,Date,Score,Q1…Q10,Wrong` header, answer-key row on top, student
       rows below, ✗ marks and a Wrong list, and appends into one growing class list.
 - [ ] Package, standalone file and zip all present and working offline.
+- [ ] Note Values reference guide renders every value with its matching rest, using the same
+      notation engine as the questions (§10).
+- [ ] Lakeland SHS logo shows in the header; palette is the logo's navy/green/lime (§11).
+- [ ] (Optional) Google sign-in at test start and Sheet submit work when configured; CSV
+      remains the offline fallback (§12).
+
+---
+
+## 10. Reference guide — Note Values
+
+Add a left-hand reference table showing each note value alongside its matching rest, its
+fractional value, and its beats in 4/4. Draw the symbols with the **same VexFlow renderer**
+used for the questions (falling back to the hand-drawn SVG set when VexFlow is unavailable),
+so the guide and the quiz never drift apart.
+
+- The column is only shown when the viewport can hold all three columns: the answer options
+  have a fixed intrinsic width (~702 px) that sets a floor on the quiz column.
+- Dotted rests must place the augmentation dot in the space above the middle line, not on the
+  notehead line. Each dotted rest needs its own glyph (do not reuse the plain rest glyph), and
+  every rest needs a `DUR` and `VEX_BASE` entry — a missing entry renders as nothing and makes
+  VexFlow reject the duration.
+
+## 11. Branding — Lakeland Senior High School
+
+- Show the school logo in the header. Use the **inverse** colourway (white/green/lime); the
+  standard navy logo is invisible on the navy header band. Include both colourways.
+- Crop each SVG from the A4 source artwork to the logo's actual bounds
+  (x 947, y 155, w 9278, h 7598) and strip Inkscape/RDF metadata.
+- Palette taken from the artwork's own fills: navy `#202B64`, green `#0A8440`, lime `#C1D52D`.
+  Keep semantic feedback colours (correct/wrong) and Google button branding unchanged.
+- Add a 4 px lime rule under the header, echoing the logo.
+- The Pages workflow must copy both logo files (it previously copied only `index.html` and
+  `lib/`, so the logos would 404 on the live site).
+
+## 12. Optional Google Sheet submit (internet only)
+
+An **additive** path so every signed-in student appends a row to one shared class spreadsheet.
+It does **not** change the `localStorage` class list or the CSV export — those stay the offline
+fallback. Because it talks to Google it needs internet, so it relaxes the "no internet"
+constraint in §7 for this one button only.
+
+- Backend: a Google Apps Script Web App bound to the spreadsheet (`Code.gs`) — no server to run
+  and no secret to embed.
+- **Mode 1** (same Workspace domain): no client ID; identify the student via
+  `Session.getActiveUser().getEmail()`.
+- **Mode 2** (any Google account): set a client ID; the button does a real "Sign in with
+  Google" and sends an access token the script verifies server-side via
+  `https://www.googleapis.com/oauth2/v3/userinfo`.
+- Sign in **before** the test starts (not at results), capture the token once, and submit from
+  the results screen without asking again.
+- Send `Content-Type: text/plain` so the POST stays a "simple" request (no CORS preflight).
+- Fall back to top-level navigation (`doGet` with `?action=submit`) when `fetch` is blocked by
+  a restricted deployment, since the browser then sends the signed-in session cookies.
+- Column order matches the CSV: `Timestamp,Email,Name,Year,Score,Q1…Q10,Wrong`.
+- Full deployment steps live in `GOOGLE-SHEET-SUBMIT.md`.

@@ -6,6 +6,11 @@
 > plan for building it up from foundation to release and beyond. If you meant a different
 > "this" (e.g. a brand-new rhythm game), tell me and I'll retarget it.
 
+> **Revision (post-release).** This plan was first written for the initial build. It has been
+> updated to reflect what is now on `main`: the **Note Values reference guide**, **Lakeland SHS
+> branding**, the **Google Sheet submit** path, and the GitHub Pages workflow. See §2 (audit),
+> §3 (line landmarks), §4 (Phase 6b) and §6 (risks).
+
 ---
 
 ## 1. Goal and constraints
@@ -30,47 +35,58 @@ build step, no server, no internet.
 
 | Artifact | Status | Notes |
 | --- | --- | --- |
-| `rhythm-quiz-package/index.html` | Built, ~1,414 lines / ~62 KB | All content + logic. |
+| `rhythm-quiz-package/index.html` | Built, ~1,775 lines / ~81 KB | All content + logic. |
 | `rhythm-quiz-package/lib/vexflow.min.js` | Vendored | VexFlow 3.0.9, MIT, ~754 KB. |
+| `rhythm-quiz-package/lakeland-logo.svg` | Built | Navy school logo (header uses the inverse). |
+| `rhythm-quiz-package/lakeland-logo-inverse.svg` | Built | White/green/lime logo used in the header. |
 | `rhythm-quiz-package/README.md` | Built | Teacher-facing instructions. |
 | `rhythm-quiz-package/LICENSES.md` | Built | VexFlow MIT + SCSA attribution. |
-| `rhythm-quiz-standalone.html` | Built | Same quiz, VexFlow inlined. |
+| `rhythm-quiz-standalone.html` | Built | Same quiz, VexFlow + logo inlined. |
 | `rhythm-quiz-package.zip` | Built | Clean zip for sharing. |
-| `BUILD-PROMPT.md` | Built | Original spec. |
-| `README.md` (top level) | Built | Explains the three deliverables. |
+| `Code.gs` | Built | Apps Script backend for the optional Sheet submit. |
+| `GOOGLE-SHEET-SUBMIT.md` | Built | Deployment guide for the Sheet submit. |
+| `.github/workflows/pages.yml` | Built | Publishes the package to GitHub Pages. |
+| `BUILD-PROMPT.md` | Built | Original spec (now Rev 2, §10–§12). |
+| `README.md` (top level) | Built | Explains the deliverables. |
 
 **Functional coverage:** 11 year groups selectable; practice mode with hints + immediate
 feedback; deterministic per-year 10-question tests; review table; CSV with answer-key row on
-top and appended class list.
+top and appended class list; a **Note Values reference guide** column; **Lakeland SHS
+branding**; and an optional **Google Sheet submit** (sign-in at test start, append to a shared
+class spreadsheet).
 
 So this is **not a greenfield build** — it is a *rebuild/extension* plan. Phases 0–6 below
 describe how to construct it from zero (useful for a rewrite, a new year's variant, or a
-teammate picking it up), and Phase 7 is the forward roadmap.
+teammate picking it up), Phase 6b records the post-release increments, and §7 is the forward
+roadmap.
 
 ---
 
 ## 3. Architecture
 
-Single-page app, no framework. `index.html` is organised into six numbered sections plus a
+Single-page app, no framework. `index.html` is organised into numbered sections plus a
 styling block. Line landmarks (current file):
 
 ```
- 1–273     HTML shell + CSS (tokens, layout, cards, tabs, print styles)
- 274–476   §1  Music note model + hand-drawn SVG renderer (fallback)
- 477–515   §1b VexFlow renderer (primary notation path)
- 516–686       Metric beaming logic
- 687–700       Concept (non-staff) graphics for Pre-primary / Year 1
- 701–729   §2  Rhythm pattern library (per year, from the Addendum)
- 730–757   §3  Year groups + time-signature totals
- 758–771       Metric helpers
- 772–870   §4  Question generator (staff questions)
- 871–1018      Concept question generator
-1019–1161  §5  App state + practice-mode UI
-1162–1187      Event wiring
-1188–1332  §6  Test mode (fixed 10 questions) + overlay flow
-1333–1381      CSV export
-1382–1404      Test/results event wiring
-1405–1414      Boot
+   1–290     HTML shell + CSS (tokens, layout, cards, tabs, print styles)
+ 291–338     Test-mode markup (overlay, results table, Google submit button)
+ 339–563     §1  Music note model + hand-drawn SVG renderer (fallback)
+ 564–611     §1b VexFlow renderer (primary notation path)
+ 612–782         Metric beaming logic
+ 783–796         Concept (non-staff) graphics for Pre-primary / Year 1
+ 797–825     §2  Rhythm pattern library (per year, from the Addendum)
+ 826–853     §3  Year groups + time-signature totals
+ 854–867         Metric helpers
+ 868–997     §4  Question generator (staff questions)
+ 998–1145        Concept question generator
+1146–1183    §5  App state + practice-mode UI
+1184–1403        Note values reference guide (VexFlow glyphs + fallback)
+1404–1429        Event wiring
+1430–1574    §6  Test mode (fixed 10 questions) + overlay flow
+1575–1623        CSV export
+1624–1646        Test/results event wiring
+1647–1764    §6b Google Sheet submit (optional; internet only)
+1765–1775        Boot
 ```
 
 **Data flow**
@@ -179,6 +195,29 @@ answer-key row per year.
 
 **Exit test:** all three artifacts work offline from a clean machine; acceptance checklist passes.
 
+### Phase 6b — Delivered increments (post-release)
+**Deliverable:** the features shipped after the initial release, on `main`.
+
+- [x] **Note Values reference guide** (`§5`, `index.html` 1184–1403): a left column showing each
+      note value with its matching rest, fraction and 4/4 beats. Symbols drawn from VexFlow so
+      the guide matches the questions, with the hand-drawn set as fallback. Only shown when the
+      viewport fits all three columns (the options have a ~702 px floor). Fixed three
+      rest-rendering bugs: dotted-rest dot placement, dotted-crotchet-rest glyph, and a missing
+      semiquaver-rest glyph/`DUR`/`VEX_BASE` entry.
+- [x] **Lakeland SHS branding**: inverse logo in the header, navy/green/lime palette
+      (`#202B64` / `#0A8440` / `#C1D52D`), 4 px lime rule under the header; logos cropped from
+      the A4 artwork and stripped of metadata; both colourways committed; the Pages workflow
+      copies both SVGs.
+- [x] **Google Sheet submit** (`§6b`, `index.html` 1647–1764, `Code.gs`,
+      `GOOGLE-SHEET-SUBMIT.md`): optional, additive, internet-only. Sign-in at test start,
+      token captured once, results-screen submit; `text/plain` POST to avoid a CORS preflight;
+      top-level-navigation fallback (`doGet?action=submit`) for restricted deployments.
+- [x] **GitHub Pages workflow**: publishes `index.html` + `lib/` + both logos on push to `main`.
+- [x] Regenerated `rhythm-quiz-standalone.html` (VexFlow + logo inlined) after each change.
+
+**Exit test:** guide matches the quiz notation; branding visible in the header on the live
+site; Sheet submit appends a row when configured; offline CSV path unaffected.
+
 ---
 
 ## 5. Acceptance checklist (definition of done)
@@ -191,6 +230,9 @@ answer-key row per year.
 - [ ] CSV header/order correct, answer-key row on top, ✗ marks + Wrong list, appends.
 - [ ] Package, standalone and zip all present and working offline.
 - [ ] Invariant assertions pass; console clean.
+- [ ] Note Values reference guide matches the quiz notation and shows each rest correctly.
+- [ ] Lakeland SHS inverse logo in the header; navy/green/lime palette.
+- [ ] (Optional) Google Sheet submit appends a row; offline CSV path still works.
 
 ---
 
@@ -205,12 +247,19 @@ answer-key row per year.
 | VexFlow API differences (e.g. `strokeRect` absent on SVGContext) | Use `beginPath/rect/stroke`; keep the SVG fallback path. |
 | `localStorage` cleared / different browser → "lost" results | Document it; CSV download is the durable copy; consider export/import JSON (Phase 7). |
 | Very long bars overflow on phones | `overflow-x:auto` on `.barwrap`; responsive grid collapses at 820px/560px. |
+| Dotted/missing rest glyphs render wrong or blank | Give every rest its own glyph and a `DUR` + `VEX_BASE` entry; place the dot in the space above the middle line; verified in the reference guide. |
+| Logo 404s on the live site | The Pages workflow must copy **both** logo SVGs (it previously copied only `index.html` + `lib/`). |
+| Sheet submit blocked by CORS / restricted deployment | POST as `text/plain`; fall back to top-level navigation (`doGet?action=submit`); CSV remains the offline fallback. |
+| Google OAuth client ID / Web App URL drift | Documented in `GOOGLE-SHEET-SUBMIT.md`; re-deploy with "Manage deployments → edit → New version" after editing `Code.gs`. |
 
 ---
 
 ## 7. Forward roadmap (next builds)
 
 Ordered by value-to-effort; each is an independent, shippable increment.
+
+> **Delivered since this list was written:** Google Sheet submit — a shared class spreadsheet
+> with sign-in at test start (see Phase 6b and `GOOGLE-SHEET-SUBMIT.md`).
 
 **Near term**
 1. **Export/import results as JSON** — back up and move the class list between machines.
@@ -243,6 +292,11 @@ Open  rhythm-quiz-standalone.html           (single-file)
 Unzip rhythm-quiz-package.zip               (share copy)
 ```
 
+The live copy is published to GitHub Pages from `main`:
+<https://rayfoolshs.github.io/rhythm-quiz/>
+
 Verify in a browser: pick each year (side panel updates), answer a few (feedback + score),
-sit a 10-question test, save CSV, reload, check the class list persisted, and confirm the
-console has no errors.
+check the Note Values guide matches the notation, sit a 10-question test, save CSV, reload,
+check the class list persisted, and confirm the console has no errors. If the Sheet submit is
+configured, confirm the Google sign-in prompt appears at test start and a row lands in the
+spreadsheet.
