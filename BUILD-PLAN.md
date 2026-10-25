@@ -173,7 +173,8 @@ exactly one correct option. No duplicate-duration options.
 
 ### Phase 5 — Test mode + CSV
 **Deliverable:** the assessment path.
-- [ ] §6 deterministic 10-question test per year; name entry; progress bar; no marking until end.
+- [ ] §6 deterministic 10-question test per year; Google sign-in gate (name from the
+      account, no name field); progress bar; no marking until end.
 - [ ] Results: score /10 and review table **Q | Question | Your answer | Correct answer | ✓/✗**
       (question shown as scaled bar; wrong rows red, correct green).
 - [ ] CSV spec: header `Year,Name,Date,Score,Q1…Q10,Wrong`; **answer-key row on top**; student

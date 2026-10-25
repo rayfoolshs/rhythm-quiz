@@ -68,12 +68,10 @@ The feedback contained several accurate findings and two that do not hold agains
 
 | Change | Detail |
 | --- | --- |
-| `validateStudentName()` | Rejects short names, leading `= + - @`, and formula keywords |
 | `resolveProfile()` | Reads `{name,email}` from `oauth2/v3/userinfo` after sign-in, so the student never types a name |
-| `openTest()` | Takes `test.name` from the signed-in account; shows the name field only as an offline/no-sign-in fallback |
-| `beginTest()` | Uses the account name, or the validator only on the fallback field |
-| `<input id="studentName">` | Added `maxlength="100"` |
-| `closeTest()` | Now clears `gsiToken` **and** `gsiProfile` — **fixes L1** |
+| `openTest()` | Sets `test.name` from the signed-in account; the page has no name field at all |
+| `beginTest()` | Refuses to start without an account name — online sign-in is required |
+| `closeTest()` | Clears `gsiToken` **and** `gsiProfile` — **fixes L1** |
 | `submitToSheet()` | Refuses to submit when a client ID is configured but no token is held |
 
 Both files carry identical logic; only the bundled VexFlow differs (external vs inline).
@@ -180,21 +178,26 @@ PASS  GET path rejects foreign domain
 ALL 38 ASSERTIONS PASSED
 ```
 
-### 6.2 Client validator (`validateStudentName`, both HTML files)
+### 6.2 Client-side name handling (both HTML files)
+
+The `validateStudentName()` input validator has been **removed**: there is no name
+field any more. The name now comes from the signed-in Google account via
+`resolveProfile()` (`oauth2/v3/userinfo`), so the client never constructs it from
+user input. Formula-injection defence therefore rests entirely on the server's
+`sanitizeInput()` / `cleanName_()`, which remains the real control.
 
 ```
-PASS  "Jane Smith" -> accepted
-PASS  "  Jane Smith  " -> trimmed
-PASS  "=1+1" / "+x" / "-5" / "@SUM(A1)" -> rejected with message
-PASS  "Jane=Doe" -> accepted
-PASS  '=HYPERLINK("http://x","y")' -> rejected
-PASS  'IMPORTXML("http://x","//a")' -> rejected
-PASS  "J" -> rejected (too short)
-PASS  150 chars -> truncated to 100
-ALL CLIENT TESTS PASSED
+PASS  signed in: name taken from account
+PASS  signed in: Begin enabled, no retry button
+PASS  online without a profile: Begin disabled, retry offered, no row possible
+PASS  file://: test runs, rows marked (offline), CSV only
+PASS  no sheet configured: test runs, CSV only
+PASS  closeTest() clears token + profile + test
+PASS  no studentName input and no validateStudentName left in either file
 ```
 
-Both HTML files parse cleanly (`new Function()` over every inline script block) and the validator, token clearing and submit guard are present in both.
+Both HTML files parse cleanly (`new Function()` over every inline script block), and
+token clearing, the sign-in gate and the submit guard are present in both.
 
 ### 6.3 Live probes (read-only; no test rows written)
 

@@ -225,22 +225,21 @@ $('startTestBtn').onclick = startTestFlow;
 > **The student never types their name.** After the token callback the shipped code
 > calls `resolveProfile(token)`, which reads
 > `https://www.googleapis.com/oauth2/v3/userinfo` with that access token and stores
-> `{name,email}` in `gsiProfile`. `openTest()` then hides the name field and sets
-> `test.name` from the account, so the sheet's `Name` column and the CSV both carry
-> the Google display name. If the profile cannot be read, or the student never signs
-> in, the name field reappears — that is what keeps the offline path working.
-> `closeTest()` clears both `gsiToken` and `gsiProfile` so the next student on a
-> shared device cannot inherit the previous student's name.
+> `{name,email}` in `gsiProfile`. `openTest()` then sets `test.name` from the account
+> — there is no name field in the page at all — so the sheet's `Name` column and the
+> CSV both carry the Google display name. `closeTest()` clears both `gsiToken` and
+> `gsiProfile` so the next student on a shared device cannot inherit the previous
+> student's name.
 >
 > The token flow is started by `startTestFlow` on **Start 10-question test**; the
 > result is then submitted automatically when the 10th answer is recorded.
 >
 > **If sign-in fails** — the account chooser is dismissed, or a school policy
-> (e.g. mandatory 2FA on a device that cannot complete it) blocks the account —
-> the test still opens in fallback mode: the student types a name and the result
-> stays in the CSV/local class list. `submitToSheet()` refuses to write to the
-> sheet without a token, so an unverified attempt is never attributed to a Google
-> account.
+> (e.g. mandatory 2FA on a device that cannot complete it) blocks the account — the
+> test does not start. Online, the result is attributed to the account, so there is
+> nothing to submit without it; the start screen explains why and offers a retry
+> button. The double-clicked `file://` copy cannot use Google OAuth at all, so there
+> the test still runs, names rows `(offline)`, and keeps them in the CSV.
 
 The payload's `responses` are the option letters in Q1→Q10 order (e.g.
 `D,B,A,A,C,B,D,B,B,B`), matching the sheet's columns.

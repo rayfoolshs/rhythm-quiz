@@ -293,13 +293,11 @@
   <div class="modal">
     <div id="testStart">
       <h2 id="testTitle">10-question test</h2>
-      <p class="tiny">This test has 10 questions. Answer every question, then your result is sent to the class sheet. Nothing is marked correct or wrong until the end.</p>
+      <p class="tiny">This test has 10 questions. Your name and result are taken from the school Google account you sign in with, and the result is sent to the class sheet when you finish. Nothing is marked correct or wrong until the end.</p>
       <p class="tiny" id="signinNote" style="display:none"></p>
-      <label class="field" id="nameField"><span>Student name</span>
-        <input id="studentName" type="text" autocomplete="off" maxlength="100" placeholder="Type your full name" />
-      </label>
       <div class="modalbtns">
         <button class="btn primary" id="testBegin">Begin test →</button>
+        <button class="btn google" id="signinRetry" style="display:none">Sign in with Google</button>
         <button class="btn" id="testClose">Cancel</button>
       </div>
     </div>
@@ -322,7 +320,7 @@
       <div id="resultTable"></div>
       <div class="modalbtns">
         <button class="btn primary" id="saveCsv">Save &amp; download CSV</button>
-        <button class="btn google" id="sheetSubmit" style="display:none">Sign in with Google &amp; submit</button>
+        <button class="btn google" id="sheetSubmit" style="display:none">Submit to class sheet</button>
         <button class="btn" id="retake">Retake test</button>
         <button class="btn" id="closeResult">Back to practice</button>
       </div>
@@ -1470,28 +1468,41 @@ function openTest(){
   test = { yearIdx: state.yearIdx, name:'', questions: makeTest(state.yearIdx), index:0, answers:[], selected:-1 };
   lastSubmitted = null;
   $('testTitle').textContent = yearLabel(state.yearIdx) + ' — 10-question test';
-  // The student's name comes from the Google account they signed in with, so
-  // there is nothing to type. The field is only shown if sign-in was not
-  // available (not configured, offline, or the account chooser was dismissed),
-  // which keeps the offline/no-internet path working.
-  const signedName = (gsiProfile && gsiProfile.name) ? gsiProfile.name : '';
-  test.name = signedName;
-  $('studentName').value = signedName;
-  $('nameField').style.display = signedName ? 'none' : '';
+
+  // The name comes from the Google account, so there is no field to fill in.
+  // Online with a sheet configured, sign-in is required because the result is
+  // attributed to that account and sent to the class sheet. If the page was
+  // opened by double-click (file://) Google OAuth cannot work at all, and with
+  // no sheet configured there is nothing to sign in for, so in both cases the
+  // test still runs and the result stays in the CSV.
+  const offline = location.protocol === 'file:';
+  const canSignIn = !!SHEET_SUBMIT.clientId && !offline;
+  const signedName = gsiProfile ? (gsiProfile.name || gsiProfile.email || '') : '';
+  const needSignIn = canSignIn && !signedName;
+  // No placeholder when sign-in is required: an empty name is what stops the
+  // test from starting and keeps an unattributed row out of the CSV.
+  test.name = signedName || (needSignIn ? '' : (offline ? '(offline)' : '(no sign-in)'));
+
   const note = $('signinNote');
   if(signedName){
-    note.style.display = '';
     note.textContent = 'Signed in as ' + signedName +
       (gsiProfile.email ? ' (' + gsiProfile.email + ')' : '') +
-      ' — your result is recorded under this account at the end.';
+      ' — your result is recorded under this account.';
+  } else if(offline){
+    note.textContent = 'Offline copy — Google sign-in and the class sheet are unavailable here, so results stay in the CSV.';
+  } else if(!SHEET_SUBMIT.clientId){
+    note.textContent = 'Sheet submit is not configured, so results stay in the CSV.';
   } else {
-    note.style.display = 'none';
+    note.textContent = 'Sign in with your school Google account to sit this test. Your name is taken from the account — there is nothing to type.';
   }
+  note.style.display = '';
+  $('signinRetry').style.display = needSignIn ? '' : 'none';
+  $('testBegin').disabled = needSignIn;
+
   $('testStart').style.display = 'block';
   $('testQuiz').style.display = 'none';
   $('testResult').style.display = 'none';
   $('testOverlay').classList.add('show');
-  if(!signedName) setTimeout(()=>$('studentName').focus(), 60);
 }
 /* Closing the test discards the Google access token and profile too, so the
    next student on a shared device is forced through the account chooser
@@ -1500,27 +1511,13 @@ function closeTest(){
   $('testOverlay').classList.remove('show');
   test = null; gsiToken = null; gsiProfile = null;
 }
-/* Reject names a spreadsheet would read as a formula (CSV injection).
-   Server-side sanitisation in Code.gs is the real control; this is UX. */
-function validateStudentName(raw){
-  let name = String(raw == null ? '' : raw).trim();
-  if(name.length < 2){ toast('Please enter your full name'); return null; }
-  if(/^[=+\-@]/.test(name)){ toast('Names cannot start with = + - or @'); return null; }
-  if(/HYPERLINK|IMPORTXML|IMPORTHTML|IMPORTDATA|IMPORTFEED|IMPORTRANGE|WEBSERVICE|GOOGLETRANSLATE/i.test(name)){
-    toast('Please enter a normal name'); return null;
-  }
-  if(name.length > 100) name = name.substring(0, 100);
-  return name;
-}
 function beginTest(){
   if(!test) return;
-  // Signed-in students already have a name from their Google account.
-  let nm = test.name;
-  if(!nm){
-    nm = validateStudentName($('studentName').value);
-    if(!nm){ $('studentName').focus(); return; }
-  }
-  test.name = nm; test.index = 0; test.answers = []; test.selected = -1;
+  // The name always comes from the signed-in Google account (or the offline
+  // marker); there is no field to validate.
+  if(!test.name){ toast('Sign in with Google to start the test'); return; }
+  const nm = test.name;
+  test.index = 0; test.answers = []; test.selected = -1;
   $('testStart').style.display = 'none';
   $('testQuiz').style.display = 'block';
   $('testResult').style.display = 'none';
@@ -1674,7 +1671,7 @@ $('testNext').onclick = nextTestQuestion;
 $('retake').onclick = retakeTest;
 $('saveCsv').onclick = saveTestResult;
 $('closeResult').onclick = closeTest;
-$('studentName').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); beginTest(); } });
+$('signinRetry').onclick = startTestFlow;
 $('csvYearBtn').onclick = ()=>{ if(!loadRecords().some(r=>r.yearIdx===state.yearIdx)){ toast('No results for this year yet'); return; } downloadCsv([state.yearIdx]); };
 $('csvAllBtn').onclick = ()=>{
   const years = [...new Set(loadRecords().map(r=>r.yearIdx))].sort((a,b)=>a-b);
@@ -1776,13 +1773,11 @@ function startTestFlow(){
         resolveProfile(gsiToken).then(p=>{ gsiProfile = p; openTest(); });
       },
       // If sign-in fails (account chooser dismissed, or 2FA/school policy
-      // blocks the account) the test still opens in fallback mode: the student
-      // types a name and the result stays in the CSV/local class list. The
-      // submit guard below still refuses to write to the sheet without a token,
-      // so an unverified attempt can never be attributed to a Google account.
+      // blocks the account) the test does not start: online, the result is
+      // attributed to the account, so there is nothing to submit without it.
+      // openTest() shows the reason and a retry button.
       error_callback: err=>{
-        toast('Google sign-in unavailable' + (err && err.type ? ' (' + err.type + ')' : '') +
-              ' — the test can still be sat; the result will not be sent to the sheet.');
+        toast('Google sign-in unavailable' + (err && err.type ? ' (' + err.type + ')' : ''));
         openTest();
       }
     });
@@ -1801,6 +1796,7 @@ function sheetSubmitUrl(payload){
    already been sent (e.g. the result screen is re-rendered). */
 function autoSubmitToSheet(){
   if(!SHEET_SUBMIT.url || !test || test.score == null) return;
+  if(location.protocol === 'file:') return;   // offline copy: CSV only
   const sig = [test.name, test.yearIdx, test.score, test.answers.join('')].join('|');
   if(sig === lastSubmitted) return;
   lastSubmitted = sig;

@@ -79,7 +79,9 @@ notes (early hand-drawn attempts had missing stems). Requirements:
 
 - **10 questions per year, fixed and identical for every student** (deterministic seed per
   year so the answer key is stable).
-- Start screen with a **student name** input.
+- Start screen: sign in with Google; the **student name comes from the account**, so
+  there is no name field to fill in. Online sign-in is required because the result is
+  attributed to the account and submitted to the class sheet.
 - One question at a time with a progress bar; **do not reveal right/wrong until the end**.
 - After Q10, a results screen showing the score out of 10 and a review table with this exact
   left-to-right column order:
