@@ -295,7 +295,7 @@
       <h2 id="testTitle">10-question test</h2>
       <p class="tiny">This test has 10 questions. Answer every question, then your result is added to the class CSV. Nothing is marked correct or wrong until the end.</p>
       <label class="field"><span>Student name</span>
-        <input id="studentName" type="text" autocomplete="off" placeholder="Type your full name" />
+        <input id="studentName" type="text" autocomplete="off" maxlength="100" placeholder="Type your full name" />
       </label>
       <div class="modalbtns">
         <button class="btn primary" id="testBegin">Begin test →</button>
@@ -1475,11 +1475,26 @@ function openTest(){
   $('testOverlay').classList.add('show');
   setTimeout(()=>$('studentName').focus(), 60);
 }
-function closeTest(){ $('testOverlay').classList.remove('show'); test = null; }
+/* Closing the test discards the Google access token too, so the next student
+   on a shared device is forced through the account chooser instead of
+   inheriting the previous student's identity. */
+function closeTest(){ $('testOverlay').classList.remove('show'); test = null; gsiToken = null; }
+/* Reject names a spreadsheet would read as a formula (CSV injection).
+   Server-side sanitisation in Code.gs is the real control; this is UX. */
+function validateStudentName(raw){
+  let name = String(raw == null ? '' : raw).trim();
+  if(name.length < 2){ toast('Please enter your full name'); return null; }
+  if(/^[=+\-@]/.test(name)){ toast('Names cannot start with = + - or @'); return null; }
+  if(/HYPERLINK|IMPORTXML|IMPORTHTML|IMPORTDATA|IMPORTFEED|IMPORTRANGE|WEBSERVICE|GOOGLETRANSLATE/i.test(name)){
+    toast('Please enter a normal name'); return null;
+  }
+  if(name.length > 100) name = name.substring(0, 100);
+  return name;
+}
 function beginTest(){
   if(!test) return;
-  const nm = $('studentName').value.trim();
-  if(!nm){ toast('Please enter your name'); $('studentName').focus(); return; }
+  const nm = validateStudentName($('studentName').value);
+  if(!nm){ $('studentName').focus(); return; }
   test.name = nm; test.index = 0; test.answers = []; test.selected = -1;
   $('testStart').style.display = 'none';
   $('testQuiz').style.display = 'block';
@@ -1707,6 +1722,12 @@ function sheetSubmitUrl(payload){
 }
 function submitToSheet(){
   if(!test || test.score == null) return;
+  // Require a Google sign-in before submitting (server re-checks this).
+  if(SHEET_SUBMIT.clientId && !gsiToken){
+    const s0 = $('sheetStatus');
+    if(s0) s0.textContent = 'Please sign in with Google before submitting.';
+    return;
+  }
   const payload = {
     accessToken: gsiToken || '',
     name:     test.name,
