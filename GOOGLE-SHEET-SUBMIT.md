@@ -221,6 +221,26 @@ $('startTestBtn').onclick = startTestFlow;
 > **Note:** the shipped `index.html` uses this start-of-test flow. `gsiToken` is
 > captured once at the start, so the results-screen button submits directly without
 > asking again.
+>
+> **The student never types their name.** After the token callback the shipped code
+> calls `resolveProfile(token)`, which reads
+> `https://www.googleapis.com/oauth2/v3/userinfo` with that access token and stores
+> `{name,email}` in `gsiProfile`. `openTest()` then hides the name field and sets
+> `test.name` from the account, so the sheet's `Name` column and the CSV both carry
+> the Google display name. If the profile cannot be read, or the student never signs
+> in, the name field reappears — that is what keeps the offline path working.
+> `closeTest()` clears both `gsiToken` and `gsiProfile` so the next student on a
+> shared device cannot inherit the previous student's name.
+>
+> The token flow is started by `startTestFlow` on **Start 10-question test**; the
+> result is then submitted automatically when the 10th answer is recorded.
+>
+> **If sign-in fails** — the account chooser is dismissed, or a school policy
+> (e.g. mandatory 2FA on a device that cannot complete it) blocks the account —
+> the test still opens in fallback mode: the student types a name and the result
+> stays in the CSV/local class list. `submitToSheet()` refuses to write to the
+> sheet without a token, so an unverified attempt is never attributed to a Google
+> account.
 
 The payload's `responses` are the option letters in Q1→Q10 order (e.g.
 `D,B,A,A,C,B,D,B,B,B`), matching the sheet's columns.

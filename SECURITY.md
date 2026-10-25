@@ -69,9 +69,11 @@ The feedback contained several accurate findings and two that do not hold agains
 | Change | Detail |
 | --- | --- |
 | `validateStudentName()` | Rejects short names, leading `= + - @`, and formula keywords |
-| `beginTest()` | Uses the validator instead of `value.trim()` |
+| `resolveProfile()` | Reads `{name,email}` from `oauth2/v3/userinfo` after sign-in, so the student never types a name |
+| `openTest()` | Takes `test.name` from the signed-in account; shows the name field only as an offline/no-sign-in fallback |
+| `beginTest()` | Uses the account name, or the validator only on the fallback field |
 | `<input id="studentName">` | Added `maxlength="100"` |
-| `closeTest()` | Now clears `gsiToken` — **fixes L1** |
+| `closeTest()` | Now clears `gsiToken` **and** `gsiProfile` — **fixes L1** |
 | `submitToSheet()` | Refuses to submit when a client ID is configured but no token is held |
 
 Both files carry identical logic; only the bundled VexFlow differs (external vs inline).
@@ -250,7 +252,7 @@ Add `<meta name="robots" content="noindex, nofollow, noarchive">` to both HTML f
   script-src 'self' 'unsafe-inline' https://accounts.google.com https://www.gstatic.com;
   style-src 'self' 'unsafe-inline';
   img-src 'self' data:;
-  connect-src 'self' https://script.google.com https://oauth2.googleapis.com https://accounts.google.com;
+  connect-src 'self' https://script.google.com https://oauth2.googleapis.com https://www.googleapis.com https://accounts.google.com;
   frame-src https://accounts.google.com;
   base-uri 'none'; object-src 'none'; form-action 'none';">
 ```

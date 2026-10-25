@@ -293,8 +293,9 @@
   <div class="modal">
     <div id="testStart">
       <h2 id="testTitle">10-question test</h2>
-      <p class="tiny">This test has 10 questions. Answer every question, then your result is added to the class CSV. Nothing is marked correct or wrong until the end.</p>
-      <label class="field"><span>Student name</span>
+      <p class="tiny">This test has 10 questions. Answer every question, then your result is sent to the class sheet. Nothing is marked correct or wrong until the end.</p>
+      <p class="tiny" id="signinNote" style="display:none"></p>
+      <label class="field" id="nameField"><span>Student name</span>
         <input id="studentName" type="text" autocomplete="off" maxlength="100" placeholder="Type your full name" />
       </label>
       <div class="modalbtns">
@@ -1472,17 +1473,36 @@ function openTest(){
   test = { yearIdx: state.yearIdx, name:'', questions: makeTest(state.yearIdx), index:0, answers:[], selected:-1 };
   lastSubmitted = null;
   $('testTitle').textContent = yearLabel(state.yearIdx) + ' — 10-question test';
-  $('studentName').value = '';
+  // The student's name comes from the Google account they signed in with, so
+  // there is nothing to type. The field is only shown if sign-in was not
+  // available (not configured, offline, or the account chooser was dismissed),
+  // which keeps the offline/no-internet path working.
+  const signedName = (gsiProfile && gsiProfile.name) ? gsiProfile.name : '';
+  test.name = signedName;
+  $('studentName').value = signedName;
+  $('nameField').style.display = signedName ? 'none' : '';
+  const note = $('signinNote');
+  if(signedName){
+    note.style.display = '';
+    note.textContent = 'Signed in as ' + signedName +
+      (gsiProfile.email ? ' (' + gsiProfile.email + ')' : '') +
+      ' — your result is recorded under this account at the end.';
+  } else {
+    note.style.display = 'none';
+  }
   $('testStart').style.display = 'block';
   $('testQuiz').style.display = 'none';
   $('testResult').style.display = 'none';
   $('testOverlay').classList.add('show');
-  setTimeout(()=>$('studentName').focus(), 60);
+  if(!signedName) setTimeout(()=>$('studentName').focus(), 60);
 }
-/* Closing the test discards the Google access token too, so the next student
-   on a shared device is forced through the account chooser instead of
-   inheriting the previous student's identity. */
-function closeTest(){ $('testOverlay').classList.remove('show'); test = null; gsiToken = null; }
+/* Closing the test discards the Google access token and profile too, so the
+   next student on a shared device is forced through the account chooser
+   instead of inheriting the previous student's identity and name. */
+function closeTest(){
+  $('testOverlay').classList.remove('show');
+  test = null; gsiToken = null; gsiProfile = null;
+}
 /* Reject names a spreadsheet would read as a formula (CSV injection).
    Server-side sanitisation in Code.gs is the real control; this is UX. */
 function validateStudentName(raw){
@@ -1497,8 +1517,12 @@ function validateStudentName(raw){
 }
 function beginTest(){
   if(!test) return;
-  const nm = validateStudentName($('studentName').value);
-  if(!nm){ $('studentName').focus(); return; }
+  // Signed-in students already have a name from their Google account.
+  let nm = test.name;
+  if(!nm){
+    nm = validateStudentName($('studentName').value);
+    if(!nm){ $('studentName').focus(); return; }
+  }
   test.name = nm; test.index = 0; test.answers = []; test.selected = -1;
   $('testStart').style.display = 'none';
   $('testQuiz').style.display = 'block';
@@ -1680,16 +1704,45 @@ const SHEET_SUBMIT = {
   clientId: '277062244479-7sdej9i2ands0rvs79q6g70kgjbflh52.apps.googleusercontent.com'
 };
 let gsiToken = null;   // holds a Google OAuth access token after sign-in
+let gsiProfile = null; // {name,email} from the signed-in account; used as the student name
 let lastSubmitted = null;   // signature of the last auto-submitted attempt (prevents duplicates)
 
 function loadGsi(cb){
   if(!SHEET_SUBMIT.clientId || (window.google && google.accounts)) return cb();
+  let done = false;
+  const fire = ()=>{ if(done) return; done = true; cb(); };
   const s = document.createElement('script');
   s.src = 'https://accounts.google.com/gsi/client';
-  s.async = s.defer = true; s.onload = cb;
+  s.async = s.defer = true;
+  s.onload = fire;
+  s.onerror = fire;         // offline / blocked: fall back instead of hanging
   document.head.appendChild(s);
+  setTimeout(fire, 4000);   // never leave the Start button dead on a stalled request
+}
+/* Ask Google who just signed in, using the access token we already hold, so
+   the student never types their name. Returns {name,email}, or null if the
+   profile cannot be read (then the name field is shown as a fallback).
+   Tried twice: the Bearer-header form first, then a query-string GET, which is
+   a "simple" request and therefore survives deployments that block preflights. */
+function resolveProfile(token){
+  if(!token) return Promise.resolve(null);
+  const url = 'https://www.googleapis.com/oauth2/v3/userinfo';
+  const read = r => r.ok ? r.json() : null;
+  const toProfile = info => (info && (info.name || info.email))
+    ? { name: info.name || '', email: info.email || '' }
+    : null;
+  return fetch(url, { headers: { Authorization: 'Bearer ' + token } })
+    .then(read).then(toProfile)
+    .catch(()=>null)
+    .then(p => p || fetch(url + '?access_token=' + encodeURIComponent(token))
+      .then(read).then(toProfile).catch(()=>null));
 }
 function googleSignInThenSubmit(){
+  if(location.protocol === 'file:'){
+    const st = $('sheetStatus');
+    if(st) st.textContent = 'Sheet submit needs the online version — use the CSV here.';
+    return;
+  }
   loadGsi(()=>{
     const st = $('sheetStatus');
     if(!(window.google && google.accounts && google.accounts.oauth2)){
@@ -1706,18 +1759,35 @@ function googleSignInThenSubmit(){
   });
 }
 // "Start 10-question test": sign in with Google first (if configured and not
-// already signed in), then open the test. Falls back to opening the test if
-// no clientId is set or the Google library cannot load.
+// already signed in), then open the test with the student's name taken from
+// their account. Falls back to opening the test if no clientId is set or the
+// Google library cannot load (offline still works: the name field appears).
 function startTestFlow(){
-  if(!SHEET_SUBMIT.clientId || gsiToken){ openTest(); return; }
+  // Opened by double-click (file://): Google OAuth cannot work from that
+  // origin, so go straight to the fallback instead of popping an
+  // "origin_mismatch" error page in the student's face.
+  if(location.protocol === 'file:'){ openTest(); return; }
+  if(!SHEET_SUBMIT.clientId || (gsiToken && gsiProfile)){ openTest(); return; }
   loadGsi(()=>{
     if(!(window.google && google.accounts && google.accounts.oauth2)){ openTest(); return; }
     const client = google.accounts.oauth2.initTokenClient({
       client_id: SHEET_SUBMIT.clientId,
       scope: 'openid email profile',
       prompt: 'select_account',   // always show the Google account chooser
-      callback: resp=>{ gsiToken = resp.access_token || ''; openTest(); },
-      error_callback: err=>{ toast('Google sign-in cancelled' + (err && err.type ? ' (' + err.type + ')' : '')); }
+      callback: resp=>{
+        gsiToken = resp.access_token || '';
+        resolveProfile(gsiToken).then(p=>{ gsiProfile = p; openTest(); });
+      },
+      // If sign-in fails (account chooser dismissed, or 2FA/school policy
+      // blocks the account) the test still opens in fallback mode: the student
+      // types a name and the result stays in the CSV/local class list. The
+      // submit guard below still refuses to write to the sheet without a token,
+      // so an unverified attempt can never be attributed to a Google account.
+      error_callback: err=>{
+        toast('Google sign-in unavailable' + (err && err.type ? ' (' + err.type + ')' : '') +
+              ' — the test can still be sat; the result will not be sent to the sheet.');
+        openTest();
+      }
     });
     client.requestAccessToken();
   });
@@ -1803,7 +1873,8 @@ function submitToSheet(opts){
 // Reveal + wire the button only when configured (app is unchanged otherwise).
 if(SHEET_SUBMIT.url){
   const sb = $('sheetSubmit');
-  sb.style.display = '';
+  // A file:// page can never reach Google sign-in, so don't offer it offline.
+  sb.style.display = location.protocol === 'file:' ? 'none' : '';
   sb.onclick = ()=>{
     if(gsiToken){ submitToSheet(); return; }                 // already signed in at test start
     if(SHEET_SUBMIT.clientId){ googleSignInThenSubmit(); }   // otherwise sign in, then submit

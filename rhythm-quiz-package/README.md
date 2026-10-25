@@ -25,10 +25,10 @@ All notation is drawn as vector SVG (VexFlow). Beams are grouped strictly by the
 Every year group has a **fixed 10-question test**, so all students in a class sit the same paper with the same answer key.
 
 1. Choose the year group, then click **Start 10-question test**.
-2. Type the **student name** and begin. Questions are not marked right or wrong until the end.
+2. Sign in with your school **Google account**. Your **name is taken from the account**, so there is nothing to type. (If sign-in is unavailable — offline, or the account chooser was dismissed — the app asks for a name instead, so the offline path still works.) Questions are not marked right or wrong until the end.
 3. Answer all 10, then the results screen shows the score and a review table:
    **Q | Question | Your answer | Correct answer | ✓/✗** (wrong rows are shaded).
-4. Click **Save & download CSV**. The result is added to the class list and a CSV file is downloaded.
+4. The result is sent to the class Google Sheet automatically when the test ends. Click **Save & download CSV** to also add it to the browser's class list and download the CSV.
 
 The CSV looks like this (correct answers on top, student responses underneath, wrong answers marked ✗). The **Year** column records which year-level test was sat:
 
