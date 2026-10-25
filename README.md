@@ -1,5 +1,8 @@
 # Rhythm Quiz — Complete the Bar
 
+[![Latest release](https://img.shields.io/github/v/release/rayfoolshs/rhythm-quiz?label=download&color=202B64)](https://github.com/rayfoolshs/rhythm-quiz/releases/latest)
+[![Live site](https://img.shields.io/badge/live-rayfoolshs.github.io%2Frhythm--quiz-0A8440)](https://rayfoolshs.github.io/rhythm-quiz/)
+
 An interactive music quiz built from the **Western Australian Curriculum: The Arts — Music, Scope & Sequence (Pre-primary–Year 10)**. It uses only the **Rhythm** content listed for each year group in the Addendum. Students choose the rhythm that makes the bar add up to the time signature.
 
 ## What's here
@@ -7,7 +10,7 @@ An interactive music quiz built from the **Western Australian Curriculum: The Ar
 | Item | Description |
 | --- | --- |
 | `rhythm-quiz-package/` | **The package.** Open `index.html`. Small HTML plus the notation engine in `lib/`. |
-| `rhythm-quiz-package.zip` | The same package zipped (~230 KB) for sharing or emailing. |
+| `rhythm-quiz-package.zip` | The same package zipped (~268 KB) for sharing or emailing — attached to every [release](https://github.com/rayfoolshs/rhythm-quiz/releases/latest). |
 | `rhythm-quiz-standalone.html` | Optional single file — the whole quiz and engine in one HTML. Larger, but nothing else needed. |
 
 ### Package structure
