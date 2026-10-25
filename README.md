@@ -32,7 +32,7 @@ Open `rhythm-quiz-package/index.html` (or `rhythm-quiz-standalone.html`) in any 
 - Keys `1`–`4` answer, `Enter` goes next. The **Answer key** panel records answers for the teacher.
 
 ### 10-question tests + CSV
-Each year group also has a **fixed 10-question test** (button: *Start 10-question test*). Students sign in with their school Google account — their name is recorded from the account, so there is nothing to type — answer all 10, then see their score and a review table showing **Question | Your answer | Correct answer | ✓/✗**. Results are saved to a class list and downloaded as a CSV with the **correct answers on top** and each **student's responses underneath**, wrong answers marked. Saves append to the same class list so the file grows into a list of student names.
+Each year group also has a **fixed 10-question test** (button: *Start 10-question test*). Students sign in with their school Google account — their name is recorded from the account, so there is nothing to type — answer all 10, then see their score and a review table showing **Question | Your answer | Correct answer | ✓/✗**. The result is submitted to the class Google Sheet automatically, and **Exit** closes the test once it has been sent. Each attempt is also kept in the browser's class list, exportable as a CSV with the **correct answers on top** and each **student's responses underneath**, wrong answers marked.
 
 See `rhythm-quiz-package/README.md` for the full year-by-year content breakdown.
 

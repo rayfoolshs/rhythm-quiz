@@ -28,7 +28,7 @@ Every year group has a **fixed 10-question test**, so all students in a class si
 2. Sign in with your school **Google account**. Your **name is taken from the account** — there is no name to type. Online, sign-in is required, because the result is attributed to that account and sent to the class sheet. (The double-clicked offline copy can't reach Google, so it keeps results in the CSV and marks them `(offline)`.) Questions are not marked right or wrong until the end.
 3. Answer all 10, then the results screen shows the score and a review table:
    **Q | Question | Your answer | Correct answer | ✓/✗** (wrong rows are shaded).
-4. The result is sent to the class Google Sheet automatically when the test ends. Click **Save & download CSV** to also add it to the browser's class list and download the CSV.
+4. The result is sent to the class Google Sheet automatically when the test ends. When you're finished, click **Exit** — it submits anything not yet sent, then closes the test. Each attempt is also kept in the browser's class list, which the sidebar can export to CSV at any time.
 
 The CSV looks like this (correct answers on top, student responses underneath, wrong answers marked ✗). The **Year** column records which year-level test was sat:
 

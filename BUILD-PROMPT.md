@@ -88,7 +88,8 @@ notes (early hand-drawn attempts had missing stems). Requirements:
   **Q | Question | Your answer | Correct answer | ✓/✗**
   where **Question** is the original bar (scaled to fit) and wrong rows are shaded red,
   correct rows green. (For concept years the Question column shows the question text.)
-- Buttons: **Save & download CSV**, **Retake test**, **Back to practice**.
+- Buttons: **Exit** (submits the result if it has not been sent yet, then closes),
+  **Retake test**.
 
 ## 6. CSV export (critical spec)
 

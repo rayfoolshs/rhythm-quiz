@@ -319,10 +319,8 @@
       <p class="scorebig" id="resultScore"></p>
       <div id="resultTable"></div>
       <div class="modalbtns">
-        <button class="btn primary" id="saveCsv">Save &amp; download CSV</button>
-        <button class="btn google" id="sheetSubmit" style="display:none">Submit to class sheet</button>
+        <button class="btn primary" id="exitTest">Exit</button>
         <button class="btn" id="retake">Retake test</button>
-        <button class="btn" id="closeResult">Back to practice</button>
       </div>
       <p class="tiny" id="sheetStatus" style="margin-top:8px"></p>
     </div>
@@ -1469,7 +1467,7 @@ function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;'
 /* ---------- overlay flow ---------- */
 function openTest(){
   test = { yearIdx: state.yearIdx, name:'', questions: makeTest(state.yearIdx), index:0, answers:[], selected:-1 };
-  lastSubmitted = null;
+  lastSubmitted = null; submittedOk = false;
   $('testTitle').textContent = yearLabel(state.yearIdx) + ' — 10-question test';
 
   // The name comes from the Google account, so there is no field to fill in.
@@ -1589,20 +1587,22 @@ function finishTest(){
   });
   html += '</table>';
   $('resultTable').innerHTML = html;
-  $('saveCsv').textContent = 'Save & download CSV';
+  saveRecord();                       // keep the sidebar class list / CSV export current
+  $('sheetStatus').textContent = '';
   // Send the finished test to the class sheet without waiting for a click.
-  // The submit button stays on screen purely as a manual retry.
   setTimeout(autoSubmitToSheet, 500);
 }
 function retakeTest(){
   if(!test) return;
   test.index = 0; test.answers = []; test.selected = -1; test.score = null;
-  lastSubmitted = null;   // a retake is a new attempt and may be saved again
+  lastSubmitted = null; submittedOk = false;   // a retake is a new attempt and is saved again
   $('testResult').style.display = 'none';
   $('testQuiz').style.display = 'block';
   renderTestQuestion();
 }
-function saveTestResult(){
+/* Store the finished attempt in the browser's class list. No download — the
+   exported CSV is produced on demand from the sidebar. */
+function saveRecord(){
   if(!test || test.score == null) return;
   const rec = {
     name: test.name, yearIdx: test.yearIdx, yearLabel: yearLabel(test.yearIdx),
@@ -1611,9 +1611,6 @@ function saveTestResult(){
   };
   const recs = loadRecords(); recs.push(rec); storeRecords(recs);
   renderRecords();
-  downloadCsv([test.yearIdx]);
-  $('saveCsv').textContent = 'Saved ✓ — download again';
-  toast('Saved to the class list and CSV downloaded');
 }
 
 /* ---------- CSV ---------- */
@@ -1672,8 +1669,7 @@ $('testQuit').onclick = closeTest;
 $('testBegin').onclick = beginTest;
 $('testNext').onclick = nextTestQuestion;
 $('retake').onclick = retakeTest;
-$('saveCsv').onclick = saveTestResult;
-$('closeResult').onclick = closeTest;
+$('exitTest').onclick = exitTest;
 $('signinRetry').onclick = startTestFlow;
 $('csvYearBtn').onclick = ()=>{ if(!loadRecords().some(r=>r.yearIdx===state.yearIdx)){ toast('No results for this year yet'); return; } downloadCsv([state.yearIdx]); };
 $('csvAllBtn').onclick = ()=>{
@@ -1702,6 +1698,8 @@ const SHEET_SUBMIT = {
 };
 let gsiToken = null;   // holds a Google OAuth access token after sign-in
 let gsiProfile = null; // {name,email} from the signed-in account; used as the student name
+let submittedOk = false;    // true once this attempt has reached the class sheet
+let pendingSubmit = null;   // in-flight submit, so Exit never sends a duplicate row
 let lastSubmitted = null;   // signature of the last auto-submitted attempt (prevents duplicates)
 
 function loadGsi(cb){
@@ -1734,23 +1732,30 @@ function resolveProfile(token){
     .then(p => p || fetch(url + '?access_token=' + encodeURIComponent(token))
       .then(read).then(toProfile).catch(()=>null));
 }
-function googleSignInThenSubmit(){
+/* Sign in again (the token is ~1 h) purely to submit, then hand control back
+   to the caller. Used by Exit when the automatic submit found no token. */
+function googleSignInThenSubmit(done){
+  const finish = ok => { if(done) done(ok); };
   if(location.protocol === 'file:'){
     const st = $('sheetStatus');
-    if(st) st.textContent = 'Sheet submit needs the online version — use the CSV here.';
-    return;
+    if(st) st.textContent = 'Sheet submit needs the online version.';
+    return finish(false);
   }
   loadGsi(()=>{
     const st = $('sheetStatus');
     if(!(window.google && google.accounts && google.accounts.oauth2)){
-      st.textContent = 'Could not load Google sign-in'; submitToSheet(); return;
+      st.textContent = 'Could not load Google sign-in';
+      return finish(false);
     }
     const client = google.accounts.oauth2.initTokenClient({
       client_id: SHEET_SUBMIT.clientId,
       scope: 'openid email profile',
       prompt: 'select_account',   // always show the Google account chooser
-      callback: resp=>{ gsiToken = resp.access_token || ''; submitToSheet(); },
-      error_callback: err=>{ st.textContent = 'Google sign-in cancelled' + (err && err.type ? ' (' + err.type + ')' : ''); }
+      callback: resp=>{ gsiToken = resp.access_token || ''; submitToSheet({ done }); },
+      error_callback: err=>{
+        st.textContent = 'Google sign-in cancelled' + (err && err.type ? ' (' + err.type + ')' : '');
+        finish(false);
+      }
     });
     client.requestAccessToken();
   });
@@ -1807,12 +1812,14 @@ function autoSubmitToSheet(){
 }
 function submitToSheet(opts){
   const auto = !!(opts && opts.auto);
-  if(!test || test.score == null) return;
-  // Require a Google sign-in before submitting (server re-checks this).
+  const done = opts && opts.done;
+  const finish = ok => { pendingSubmit = null; if(done) done(ok); };
+  if(!test || test.score == null) return finish(false);
+  const st = $('sheetStatus');
+  // Require a Google sign-in before submitting (the server re-checks this).
   if(SHEET_SUBMIT.clientId && !gsiToken){
-    const s0 = $('sheetStatus');
-    if(s0) s0.textContent = 'Please sign in with Google before submitting.';
-    return;
+    if(st) st.textContent = 'Sign in with Google to submit.';
+    return finish(false);
   }
   const payload = {
     accessToken: gsiToken || '',
@@ -1823,15 +1830,13 @@ function submitToSheet(opts){
     responses: test.answers.map(a => LETTERS[a]),
     wrong:    test.wrong.map(i => 'Q' + (i+1)).join(', ')
   };
-  const btn = $('sheetSubmit'), st = $('sheetStatus');
-  btn.disabled = true;
-  st.textContent = auto ? 'Saving to the class sheet…' : 'Submitting…';
-  // A manual click opens a tab before the await, so the popup blocker allows
-  // the cookie-based fallback below. An automatic submit has no click to hang
-  // that on, so it goes straight to fetch and leaves retrying to the button.
+  if(st) st.textContent = auto ? 'Saving to the class sheet…' : 'Submitting…';
+  // A retry opens a tab before the await, so the popup blocker allows the
+  // cookie-based fallback below. The automatic submit has no click to hang
+  // that on, so it goes straight to fetch.
   let tab = null;
   if(!auto){ try { tab = window.open('', '_blank'); } catch(e){ tab = null; } }
-  fetch(SHEET_SUBMIT.url, {
+  pendingSubmit = fetch(SHEET_SUBMIT.url, {
     method : 'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // text/plain avoids a CORS preflight
     body   : JSON.stringify(payload)
@@ -1840,42 +1845,55 @@ function submitToSheet(opts){
   .then(res=>{
     if(tab) tab.close();
     if(res && res.ok){
-      st.textContent = 'Saved to class sheet' + (res.email ? ' as ' + res.email : '');
-      btn.textContent = 'Submitted ✓';
+      submittedOk = true;
+      if(st) st.textContent = 'Saved to class sheet' + (res.email ? ' as ' + res.email : '');
       if(auto) toast('Result saved to the class sheet');
+      finish(true);
+      return true;
     } else {
-      st.textContent = 'Could not save: ' + ((res && res.error) || 'unknown error') +
-                       (auto ? ' — press the button below to retry.' : '');
-      btn.disabled = false;
-      // Token expired or rejected: drop it so the next click runs sign-in again.
+      if(st) st.textContent = 'Could not save: ' + ((res && res.error) || 'unknown error');
+      // Token expired or rejected: drop it so Exit runs sign-in again.
       if(res && /sign in/i.test(String(res.error || ''))) gsiToken = null;
-      if(auto) btn.textContent = 'Try submitting again';
+      finish(false);
+      return false;
     }
   })
   .catch(()=>{
     if(tab){
       tab.location.href = sheetSubmitUrl(payload);
-      st.textContent = 'Submitted via Google — check the Results tab.';
-      btn.textContent = 'Submitted ✓';
+      if(st) st.textContent = 'Submitted via Google — check the Results tab.';
+      submittedOk = true;
+      finish(true);
+      return true;
     } else {
-      st.textContent = auto
-        ? 'Could not reach the class sheet — press the button below to retry. CSV still works.'
-        : 'Could not reach the sheet (offline?). CSV still works.';
-      btn.disabled = false;
-      if(auto) btn.textContent = 'Try submitting again';
+      if(st) st.textContent = 'Could not reach the class sheet.';
+      finish(false);
+      return false;
     }
   });
 }
-// Reveal + wire the button only when configured (app is unchanged otherwise).
-if(SHEET_SUBMIT.url){
-  const sb = $('sheetSubmit');
-  // A file:// page can never reach Google sign-in, so don't offer it offline.
-  sb.style.display = location.protocol === 'file:' ? 'none' : '';
-  sb.onclick = ()=>{
-    if(gsiToken){ submitToSheet(); return; }                 // already signed in at test start
-    if(SHEET_SUBMIT.clientId){ googleSignInThenSubmit(); }   // otherwise sign in, then submit
-    else { submitToSheet(); }
+/* The single action on the results screen: send the result if it has not been
+   sent yet, then close the test. If the automatic submit already succeeded,
+   this is just a close. */
+function exitTest(){
+  const leave = ok => {
+    if(!ok) toast('Result not saved to the class sheet');
+    closeTest();
   };
+  if(!test || test.score == null){ closeTest(); return; }
+  if(location.protocol === 'file:' || !SHEET_SUBMIT.url || !SHEET_SUBMIT.clientId || submittedOk){
+    closeTest(); return;
+  }
+  const btn = $('exitTest');
+  btn.disabled = true;
+  // An automatic submit may still be in flight: wait for that one instead of
+  // writing a second row.
+  if(pendingSubmit){
+    pendingSubmit.then(ok=>{ btn.disabled = false; leave(ok); });
+    return;
+  }
+  if(gsiToken) submitToSheet({ done: ok=>{ btn.disabled = false; leave(ok); } });
+  else googleSignInThenSubmit(ok=>{ btn.disabled = false; leave(ok); });
 }
 
 /* ---------- boot ---------- */

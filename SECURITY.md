@@ -72,6 +72,7 @@ The feedback contained several accurate findings and two that do not hold agains
 | `openTest()` | Sets `test.name` from the signed-in account; the page has no name field at all |
 | `beginTest()` | Refuses to start without an account name — online sign-in is required |
 | `closeTest()` | Clears `gsiToken` **and** `gsiProfile` — **fixes L1** |
+| `exitTest()` | Single results action: waits for any in-flight submit, signs in again if the token expired, then closes |
 | `submitToSheet()` | Refuses to submit when a client ID is configured but no token is held |
 
 Both files carry identical logic; only the bundled VexFlow differs (external vs inline).

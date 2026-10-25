@@ -97,26 +97,23 @@ function doGet(){
 
 ---
 
-## 2. HTML hook — one button + one status line
+## 2. Results screen — one action + one status line
 
-Inside the existing results block, in the `.modalbtns` (right after the
-**Save & download CSV** button in `#testResult`):
+The shipped results block has a single action, **Exit**. It submits the result if
+the automatic submit at the end of Q10 did not get through, then closes the test.
+There is no CSV button on this screen; the sidebar still exports the class list.
 
 ```html
 <div class="modalbtns">
-  <button class="btn primary" id="saveCsv">Save &amp; download CSV</button>
-
-  <!-- ↓↓↓ ADD THIS ↓↓↓ -->
-  <button class="btn google" id="sheetSubmit">Sign in with Google &amp; submit</button>
-  <!-- ↑↑↑ ADD THIS ↑↑↑ -->
-
+  <button class="btn primary" id="exitTest">Exit</button>
   <button class="btn" id="retake">Retake test</button>
-  <button class="btn" id="closeResult">Back to practice</button>
 </div>
-
-<!-- ↓↓↓ ADD THIS, just below the .modalbtns inside #testResult ↓↓↓ -->
 <p class="tiny" id="sheetStatus" style="margin-top:8px"></p>
 ```
+
+`exitTest()` waits for any submit already in flight rather than writing a second
+row, and falls back to a fresh Google sign-in if the access token has expired.
+If the write fails, the student sees the reason on `#sheetStatus` and a toast.
 
 Optional CSS (add anywhere in the `<style>` block) for a Google-styled button:
 
@@ -128,7 +125,13 @@ Optional CSS (add anywhere in the `<style>` block) for a Google-styled button:
 
 ---
 
-## 3. Client JS — insert just before the `/* boot */` section (before `buildTabs();`)
+## 3. Client JS — the original sketch
+
+> This block is the first-cut hook (sign-in on the results screen, manual
+> `#sheetSubmit` button). The shipped code has moved on: it signs in at test
+> start, submits automatically at Q10, and uses **Exit** as the only results
+> action (see §2 and the notes at the end of this section). Keep reading for the
+> deployment steps; the payload shape is unchanged.
 
 ```js
 /* ============================================================
