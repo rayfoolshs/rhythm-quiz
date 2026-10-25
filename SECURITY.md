@@ -18,7 +18,7 @@
 | S5 | No CAPTCHA / bot mitigation | 🟠 High | ⬜ Open |
 | S6 | Sign-in enforcement lives only in the browser | 🟠 High | ✅ Client guard added; server already enforced |
 | S7 | Student names in `localStorage` in clear text | 🟡 Medium | ⬜ Open (mitigations documented) |
-| S8 | Site is indexable | 🟡 Medium | ⬜ Open |
+| S8 | Site is indexable | 🟡 Medium | ✅ **Fixed** — `noindex` meta on both HTML files |
 | S9 | No CSP / security headers | 🟡 Medium | ⬜ Open |
 | S10 | Source is readable | 🔵 Low | Accepted (not a control) |
 | **L1** | **Google access token carried over between students** | 🔴 Critical | ✅ **Fixed in code** |
@@ -244,9 +244,26 @@ Create keys for `rayfoolshs.github.io`, add the script tag, send `recaptchaToken
 
 Store initials instead of full names; keep the authoritative record in the Sheet. Do **not** bother with in-page "encryption" — a key shipped in the page is obfuscation, not protection. Clear the local list after a successful submission.
 
-### S8 — Indexing (Medium)
+### S8 — Indexing (Medium) — fixed
 
-Add `<meta name="robots" content="noindex, nofollow, noarchive">` to both HTML files, then request removal in Search Console. Note the Pages workflow copies only `index.html`, `lib/` and the two logos — a root `robots.txt` would **not** be published without editing `.github/workflows/pages.yml`.
+Both HTML files now carry:
+
+```html
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="googlebot" content="noindex, nofollow, noarchive">
+```
+
+The standalone file is generated from `index.html`, so it inherits the tags.
+
+**Why not `robots.txt`:** crawlers only read `/robots.txt` at the host root
+(`https://rayfoolshs.github.io/robots.txt`), not in a project subdirectory. A file at
+`/rhythm-quiz/robots.txt` would be published but ignored, so the meta tag is the
+control that actually applies. (`noindex` in a directory-level robots.txt is also
+ignored by Google, so there is nothing to gain there either.)
+
+**Still to do by hand:** if the site was crawled before this change, request removal
+in **Google Search Console → Removals** for `https://rayfoolshs.github.io/rhythm-quiz/`.
+The `noindex` tag keeps it out once recrawled, but removal is immediate.
 
 ### S9 — CSP (Medium)
 
