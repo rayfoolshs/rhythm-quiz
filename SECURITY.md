@@ -27,7 +27,7 @@
 | **L4** | Student name/score placed in URL query string | 🟡 Medium | ⚠️ Documented, open |
 | **L9** | **Access token sent as a query parameter on the profile-lookup retry** | 🟡 Medium | ⚠️ Accepted, documented (§4.2) |
 
-> **Deployment state (25 Oct 2026).** The front end is live: `main` is at the tagged release `v1.3.1`, the Pages workflow run for that commit succeeded, and the served `index.html` is byte-identical to the committed `rhythm-quiz-package/index.html`. `Code.gs` is **not** deployed by the Pages workflow — it must still be pasted into the Apps Script editor and **redeployed as a new version** (§8), then confirmed with one real row.
+> **Deployment state (25 Oct 2026).** The front end is live and matches release `v1.3.1`: the Pages workflow run for that code succeeded, and the served `index.html` is byte-identical to the committed `rhythm-quiz-package/index.html`. `Code.gs` is **not** deployed by the Pages workflow — it must still be pasted into the Apps Script editor and **redeployed as a new version** (§8), then confirmed with one real row.
 
 ---
 

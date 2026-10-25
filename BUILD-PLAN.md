@@ -227,7 +227,7 @@ site; Sheet submit appends a row when configured; offline CSV path unaffected.
 - [ ] All 11 year groups selectable; side panel updates per year.
 - [ ] Notation professional (stems/flags/beams/rests/time signatures correct).
 - [ ] Practice mode works with hints and immediate feedback.
-- [ ] Each year has a stable 10-question test with a name field.
+- [ ] Each year has a stable 10-question test with a Google sign-in gate and no name field.
 - [ ] Results table is `Q | Question | Your answer | Correct answer | ✓/✗`.
 - [ ] CSV header/order correct, answer-key row on top, ✗ marks + Wrong list, appends.
 - [ ] Package, standalone and zip all present and working offline.
