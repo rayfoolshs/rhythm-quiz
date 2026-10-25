@@ -3,7 +3,7 @@
 **Site:** https://rayfoolshs.github.io/rhythm-quiz/
 **Repo:** https://github.com/rayfoolshs/rhythm-quiz
 **Reviewed:** 25 October 2026
-**Status:** 🟠 Partially remediated — code patches applied locally, **not yet deployed**
+**Status:** 🟢 Front end deployed and live (`v1.3.0`) — `Code.gs` still needs a manual redeploy in the Apps Script editor (§8)
 
 ---
 
@@ -11,7 +11,7 @@
 
 | # | Finding | Severity | Status |
 | --- | --- | --- | --- |
-| S1 | Spreadsheet formula (CSV) injection via name/year | 🔴 Critical | ✅ **Fixed in code** (server + client) |
+| S1 | Spreadsheet formula (CSV) injection via name/year | 🔴 Critical | ✅ **Fixed server-side** (`sanitizeInput`, `cleanName_`); the typed-name field no longer exists |
 | S2 | Google Sheet publicly readable/writable | 🔴 Critical | ✅ **Already mitigated** — verified 401 |
 | S3 | No identity required to write rows | 🔴 Critical | ✅ **Already mitigated by Google**; hardened further |
 | S4 | No rate limiting | 🟠 High | ⬜ Open |
@@ -26,7 +26,7 @@
 | **L3** | **`?action=submit` GET path is CSRF-able and bypasses OAuth** | 🟡 Medium | ⚠️ Documented, open |
 | **L4** | Student name/score placed in URL query string | 🟡 Medium | ⚠️ Documented, open |
 
-> **Deployment reminder:** the patches below are in the working copy only. `Code.gs` must be pasted into the Apps Script editor and **redeployed as a new version**, and the two HTML files pushed to `main`.
+> **Deployment state (25 Oct 2026).** The front end is live: `main` is at the tagged release `v1.3.0`, the Pages workflow run for that commit succeeded, and the served `index.html` is byte-identical to the committed `rhythm-quiz-package/index.html`. `Code.gs` is **not** deployed by the Pages workflow — it must still be pasted into the Apps Script editor and **redeployed as a new version** (§8), then confirmed with one real row.
 
 ---
 
@@ -265,7 +265,7 @@ Verify sign-in, notation rendering and submission afterwards. GitHub Pages canno
 
 ### Housekeeping
 
-- `rhythm-quiz-package.zip` is referenced by `README.md` but gitignored — regenerate with `zip -rX rhythm-quiz-package.zip rhythm-quiz-package` or drop the reference.
+- `rhythm-quiz-package.zip` is gitignored **by design** and published as a release asset instead (`v1.3.0`). Regenerate with `git archive --format=zip -o rhythm-quiz-package.zip HEAD rhythm-quiz-package` and attach it to the next release.
 - No `favicon.ico` (404 on every visit) — cosmetic.
 
 ---
@@ -286,14 +286,26 @@ Verify sign-in, notation rendering and submission afterwards. GitHub Pages canno
 ### Front end
 
 ```bash
-git add rhythm-quiz-package/index.html rhythm-quiz-standalone.html SECURITY.md
-git commit -m "Security: block formula injection, validate names, clear OAuth token between students"
-git push
+git add -A
+git commit -m "…"
+git push origin HEAD:main      # Pages builds and deploys on push to main
 ```
 
-GitHub Pages redeploys on push to `main`.
+Verify the deployed file is the one you just committed:
 
-**Rollback:** keep the previous `Code.gs`; redeploy it as a new version. The `/exec` URL does not change.
+```bash
+curl -s https://rayfoolshs.github.io/rhythm-quiz/ | diff - rhythm-quiz-package/index.html && echo "live == committed"
+gh run list -R rayfoolshs/rhythm-quiz -L 1
+```
+
+When the package itself changes, also publish a release (the zip is not in the repo):
+
+```bash
+git archive --format=zip -o rhythm-quiz-package.zip HEAD rhythm-quiz-package
+gh release create vX.Y.Z ./rhythm-quiz-package.zip --target main --notes-file notes.md
+```
+
+**Rollback:** keep the previous `Code.gs`; redeploy it as a new version. The `/exec` URL does not change. For the front end, revert the commit on `main`; Pages redeploys automatically.
 
 ---
 
