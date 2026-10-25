@@ -1467,6 +1467,7 @@ function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;'
 /* ---------- overlay flow ---------- */
 function openTest(){
   test = { yearIdx: state.yearIdx, name:'', questions: makeTest(state.yearIdx), index:0, answers:[], selected:-1 };
+  lastSubmitted = null;
   $('testTitle').textContent = yearLabel(state.yearIdx) + ' — 10-question test';
   $('studentName').value = '';
   $('testStart').style.display = 'block';
@@ -1565,10 +1566,14 @@ function finishTest(){
   html += '</table>';
   $('resultTable').innerHTML = html;
   $('saveCsv').textContent = 'Save & download CSV';
+  // Send the finished test to the class sheet without waiting for a click.
+  // The submit button stays on screen purely as a manual retry.
+  setTimeout(autoSubmitToSheet, 500);
 }
 function retakeTest(){
   if(!test) return;
   test.index = 0; test.answers = []; test.selected = -1; test.score = null;
+  lastSubmitted = null;   // a retake is a new attempt and may be saved again
   $('testResult').style.display = 'none';
   $('testQuiz').style.display = 'block';
   renderTestQuestion();
@@ -1672,6 +1677,7 @@ const SHEET_SUBMIT = {
   clientId: '277062244479-7sdej9i2ands0rvs79q6g70kgjbflh52.apps.googleusercontent.com'
 };
 let gsiToken = null;   // holds a Google OAuth access token after sign-in
+let lastSubmitted = null;   // signature of the last auto-submitted attempt (prevents duplicates)
 
 function loadGsi(cb){
   if(!SHEET_SUBMIT.clientId || (window.google && google.accounts)) return cb();
@@ -1720,7 +1726,18 @@ function sheetSubmitUrl(payload){
   });
   return SHEET_SUBMIT.url + (SHEET_SUBMIT.url.indexOf('?') >= 0 ? '&' : '?') + q.toString();
 }
-function submitToSheet(){
+/* Fires once when the 10th answer is submitted, so the row is saved without
+   the student having to press anything. Skipped if this exact attempt has
+   already been sent (e.g. the result screen is re-rendered). */
+function autoSubmitToSheet(){
+  if(!SHEET_SUBMIT.url || !test || test.score == null) return;
+  const sig = [test.name, test.yearIdx, test.score, test.answers.join('')].join('|');
+  if(sig === lastSubmitted) return;
+  lastSubmitted = sig;
+  submitToSheet({ auto:true });
+}
+function submitToSheet(opts){
+  const auto = !!(opts && opts.auto);
   if(!test || test.score == null) return;
   // Require a Google sign-in before submitting (server re-checks this).
   if(SHEET_SUBMIT.clientId && !gsiToken){
@@ -1738,13 +1755,13 @@ function submitToSheet(){
     wrong:    test.wrong.map(i => 'Q' + (i+1)).join(', ')
   };
   const btn = $('sheetSubmit'), st = $('sheetStatus');
-  btn.disabled = true; st.textContent = 'Submitting…';
-  // Open a tab now, while still inside the click, so the popup blocker allows it.
-  // If the direct request is refused by the deployment's login wall (common for
-  // domain-restricted web apps), we navigate this tab to the script URL instead —
-  // a top-level visit carries the student's signed-in Google session.
+  btn.disabled = true;
+  st.textContent = auto ? 'Saving to the class sheet…' : 'Submitting…';
+  // A manual click opens a tab before the await, so the popup blocker allows
+  // the cookie-based fallback below. An automatic submit has no click to hang
+  // that on, so it goes straight to fetch and leaves retrying to the button.
   let tab = null;
-  try { tab = window.open('', '_blank'); } catch(e){ tab = null; }
+  if(!auto){ try { tab = window.open('', '_blank'); } catch(e){ tab = null; } }
   fetch(SHEET_SUBMIT.url, {
     method : 'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // text/plain avoids a CORS preflight
@@ -1756,9 +1773,14 @@ function submitToSheet(){
     if(res && res.ok){
       st.textContent = 'Saved to class sheet' + (res.email ? ' as ' + res.email : '');
       btn.textContent = 'Submitted ✓';
+      if(auto) toast('Result saved to the class sheet');
     } else {
-      st.textContent = 'Could not save: ' + ((res && res.error) || 'unknown error');
+      st.textContent = 'Could not save: ' + ((res && res.error) || 'unknown error') +
+                       (auto ? ' — press the button below to retry.' : '');
       btn.disabled = false;
+      // Token expired or rejected: drop it so the next click runs sign-in again.
+      if(res && /sign in/i.test(String(res.error || ''))) gsiToken = null;
+      if(auto) btn.textContent = 'Try submitting again';
     }
   })
   .catch(()=>{
@@ -1767,8 +1789,11 @@ function submitToSheet(){
       st.textContent = 'Submitted via Google — check the Results tab.';
       btn.textContent = 'Submitted ✓';
     } else {
-      st.textContent = 'Could not reach the sheet (offline?). CSV still works.';
+      st.textContent = auto
+        ? 'Could not reach the class sheet — press the button below to retry. CSV still works.'
+        : 'Could not reach the sheet (offline?). CSV still works.';
       btn.disabled = false;
+      if(auto) btn.textContent = 'Try submitting again';
     }
   });
 }
