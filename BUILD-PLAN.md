@@ -35,7 +35,7 @@ build step, no server, no internet.
 
 | Artifact | Status | Notes |
 | --- | --- | --- |
-| `rhythm-quiz-package/index.html` | Built, ~1,775 lines / ~81 KB | All content + logic. |
+| `rhythm-quiz-package/index.html` | Built, ~1,950 lines / ~87 KB | All content + logic. |
 | `rhythm-quiz-package/lib/vexflow.min.js` | Vendored | VexFlow 3.0.9, MIT, ~754 KB. |
 | `rhythm-quiz-package/lakeland-logo.svg` | Built | Navy school logo (header uses the inverse). |
 | `rhythm-quiz-package/lakeland-logo-inverse.svg` | Built | White/green/lime logo used in the header. |

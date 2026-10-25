@@ -144,7 +144,7 @@ feedback colours (green correct / red wrong), and a print-friendly stylesheet.
 - [ ] All 11 year groups selectable; side panel updates per year.
 - [ ] Notation is professional (stems/flags/beams/rests/time signatures all correct).
 - [ ] Practice mode works with hints and immediate feedback.
-- [ ] Each year has a stable 10-question test with a name field.
+- [ ] Each year has a stable 10-question test with a Google sign-in gate and no name field.
 - [ ] Results table is `Q | Question | Your answer | Correct answer | ✓/✗`.
 - [ ] CSV has the `Year,Name,Date,Score,Q1…Q10,Wrong` header, answer-key row on top, student
       rows below, ✗ marks and a Wrong list, and appends into one growing class list.

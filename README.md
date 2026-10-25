@@ -10,16 +10,18 @@ An interactive music quiz built from the **Western Australian Curriculum: The Ar
 | Item | Description |
 | --- | --- |
 | `rhythm-quiz-package/` | **The package.** Open `index.html`. Small HTML plus the notation engine in `lib/`. |
-| `rhythm-quiz-package.zip` | The same package zipped (~268 KB) for sharing or emailing — attached to every [release](https://github.com/rayfoolshs/rhythm-quiz/releases/latest). |
+| `rhythm-quiz-package.zip` | The same package zipped for sharing or emailing — attached to every [release](https://github.com/rayfoolshs/rhythm-quiz/releases/latest). |
 | `rhythm-quiz-standalone.html` | Optional single file — the whole quiz and engine in one HTML. Larger, but nothing else needed. |
 
 ### Package structure
 
 ```
 rhythm-quiz-package/
-├── index.html          the quiz (content + logic, ~41 KB)
+├── index.html          the quiz (content + logic, ~87 KB)
 ├── lib/
 │   └── vexflow.min.js  music notation engine (VexFlow 3.0.9, MIT)
+├── lakeland-logo.svg           school logo (navy; print/other use)
+├── lakeland-logo-inverse.svg   school logo used in the header
 ├── README.md           full instructions and year-by-year coverage
 └── LICENSES.md
 ```
