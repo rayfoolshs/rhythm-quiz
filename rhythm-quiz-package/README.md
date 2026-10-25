@@ -25,7 +25,7 @@ All notation is drawn as vector SVG (VexFlow). Beams are grouped strictly by the
 Every year group has a **fixed 10-question test**, so all students in a class sit the same paper with the same answer key.
 
 1. Choose the year group, then click **Start 10-question test**.
-2. Sign in with your school **Google account**. Your **name is taken from the account** — there is no name to type. Online, sign-in is required, because the result is attributed to that account and sent to the class sheet. (The double-clicked offline copy can't reach Google, so it keeps results in the CSV and marks them `(offline)`.) Questions are not marked right or wrong until the end.
+2. Sign in with your school **Google account**. Your **name is taken from the account** — there is no name to type. Online, sign-in is required, because the result is attributed to that account and sent to the class sheet. (The double-clicked offline copy can't reach Google, so it keeps results in the CSV and marks them `(offline)` — those rows cannot be attributed to a student, so use the hosted version for named results.) Questions are not marked right or wrong until the end.
 3. Answer all 10, then the results screen shows the score and a review table:
    **Q | Question | Your answer | Correct answer | ✓/✗** (wrong rows are shaded).
 4. The result is sent to the class Google Sheet automatically when the test ends. When you're finished, click **Exit** — it submits anything not yet sent, then closes the test. Each attempt is also kept in the browser's class list, which the sidebar can export to CSV at any time.
@@ -39,7 +39,7 @@ Year 3,Alice Smith,2026-09-26 17:02,8/10,B,A,A ✗,A,A,A ✗,C,D,B,B,"Q3, Q6"
 Year 3,Bob Jones,2026-09-26 17:02,10/10,B,A,B,A,A,C,C,D,B,B,
 ```
 
-- Each save is **appended to the class list** stored in the browser, so the list of student names grows.
+- Each finished attempt is **appended to the class list** stored in the browser automatically, so the list of student names grows. A retake is a separate attempt and adds its own row.
 - Use **Download CSV (all years)** to get one file with every year together; each year keeps its own answer-key row and the Year column tells them apart.
 - **Clear results** empties the saved list in this browser.
 - Because browsers cannot silently write to a file on disk, results are kept in the browser and written out when you download the CSV. Downloading again always produces the full, up-to-date class list. Files are named `rhythm-quiz-results-<Year>.csv` (or `...-all-years.csv`).

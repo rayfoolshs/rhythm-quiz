@@ -25,6 +25,7 @@
 | **L2** | **OAuth token audience never validated** | 🟠 High | ✅ **Fixed in code** |
 | **L3** | **`?action=submit` GET path is CSRF-able and bypasses OAuth** | 🟡 Medium | ⚠️ Documented, open |
 | **L4** | Student name/score placed in URL query string | 🟡 Medium | ⚠️ Documented, open |
+| **L9** | **Access token sent as a query parameter on the profile-lookup retry** | 🟡 Medium | ⚠️ Accepted, documented (§4.2) |
 
 > **Deployment state (25 Oct 2026).** The front end is live: `main` is at the tagged release `v1.3.0`, the Pages workflow run for that commit succeeded, and the served `index.html` is byte-identical to the committed `rhythm-quiz-package/index.html`. `Code.gs` is **not** deployed by the Pages workflow — it must still be pasted into the Apps Script editor and **redeployed as a new version** (§8), then confirmed with one real row.
 
@@ -68,7 +69,7 @@ The feedback contained several accurate findings and two that do not hold agains
 
 | Change | Detail |
 | --- | --- |
-| `resolveProfile()` | Reads `{name,email}` from `oauth2/v3/userinfo` after sign-in, so the student never types a name |
+| `resolveProfile()` | Reads `{name,email}` from `oauth2/v3/userinfo` after sign-in (Bearer header, then query-string fallback — see L9), so the student never types a name |
 | `openTest()` | Sets `test.name` from the signed-in account; the page has no name field at all |
 | `beginTest()` | Refuses to start without an account name — online sign-in is required |
 | `closeTest()` | Clears `gsiToken` **and** `gsiProfile` — **fixes L1** |
@@ -120,6 +121,8 @@ The endpoint answers `401` to a cookie-less `POST`, so in practice writes go thr
 **L7 — Authorised origins (verify).** Confirm the client lists **only** `https://rayfoolshs.github.io` — no `localhost` leftovers and no wildcard.
 
 **L8 — Score trustworthiness (out of scope).** Questions and answer keys are generated in the browser, so a signed-in student can forge a score in the request body. Server-side grading would be required to prevent this; see §9.
+
+**L9 — Profile-lookup fallback puts the token in a URL (Medium, accepted).** `resolveProfile()` asks `oauth2/v3/userinfo` with an `Authorization: Bearer` header first. If that request fails — typically a deployment that blocks the CORS preflight — it repeats the GET with `?access_token=…`, which is a "simple" request and therefore needs no preflight. The token then appears in devtools, in any intermediary proxy log, and in Google's request logs. Accepted because the token carries only `openid email profile`, lives about an hour, is held in a page variable and never persisted, and dropping the fallback would block the test outright for affected deployments. If the header form works, the query-string form never runs.
 
 ---
 
@@ -331,6 +334,7 @@ gh release create vX.Y.Z ./rhythm-quiz-package.zip --target main --notes-file no
 - **Score integrity.** The answer key is generated client-side; a signed-in student can forge a score. Closing this requires server-side question delivery and grading.
 - **GET CSRF (L3)** lets a signed-in student insert one bogus row via a crafted link. Rate limiting is the pragmatic mitigation.
 - **Shared-device hygiene.** Token clearing reduces, but does not eliminate, cross-student attribution; students should sign out of Google in the browser.
+- **Token in a URL on the lookup retry (L9).** The fallback that survives a blocked CORS preflight exposes a short-lived, email-scope token in the query string. It is never persisted, but it is visible to devtools and any proxy log.
 - **Quota.** Apps Script limits are generous but finite; there is no DDoS protection beyond Google's own.
 - **No audit trail.** A Sheet is not a records system — no retention policy, no per-row access log, no leaver workflow.
 

@@ -161,10 +161,6 @@
   .modal{max-width:900px; margin:24px auto; background:#fff; border-radius:18px; padding:22px; box-shadow:0 24px 60px rgba(20,10,60,.35)}
   .modal h2{margin:0 0 6px}
   .modal .prompt{margin-top:14px}
-  .field{display:block; margin:16px 0}
-  .field span{display:block; font-size:.8rem; font-weight:700; color:var(--muted); margin-bottom:5px}
-  .field input{width:100%; padding:11px 12px; border:2px solid var(--line); border-radius:10px; font-size:1rem; font-family:inherit}
-  .field input:focus{outline:none; border-color:var(--brand2)}
   .modalbtns{display:flex; gap:8px; flex-wrap:wrap; margin-top:18px}
   .testtop{display:flex; justify-content:space-between; align-items:center; font-size:.85rem; color:var(--muted); font-weight:700}
   .progress{height:8px; background:#e8ebf4; border-radius:999px; overflow:hidden; margin:8px 0 4px}
@@ -1468,44 +1464,52 @@ function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;'
 
 /* ---------- overlay flow ---------- */
 function openTest(){
-  test = { yearIdx: state.yearIdx, name:'', questions: makeTest(state.yearIdx), index:0, answers:[], selected:-1 };
-  lastSubmitted = null; submittedOk = false;
+  const identity = studentIdentity();
+  test = { yearIdx: state.yearIdx, name: identity.name, identity,
+           questions: makeTest(state.yearIdx), index:0, answers:[], selected:-1, recorded:false };
+  lastSubmitted = null; submittedOk = false; inFlightSubmit = null; exitFailures = 0;
   $('testTitle').textContent = yearLabel(state.yearIdx) + ' — 10-question test';
 
-  // The name comes from the Google account, so there is no field to fill in.
-  // Online with a sheet configured, sign-in is required because the result is
-  // attributed to that account and sent to the class sheet. If the page was
-  // opened by double-click (file://) Google OAuth cannot work at all, and with
-  // no sheet configured there is nothing to sign in for, so in both cases the
-  // test still runs and the result stays in the CSV.
-  const offline = location.protocol === 'file:';
-  const canSignIn = !!SHEET_SUBMIT.clientId && !offline;
-  const signedName = gsiProfile ? (gsiProfile.name || gsiProfile.email || '') : '';
-  const needSignIn = canSignIn && !signedName;
-  // No placeholder when sign-in is required: an empty name is what stops the
-  // test from starting and keeps an unattributed row out of the CSV.
-  test.name = signedName || (needSignIn ? '' : (offline ? '(offline)' : '(no sign-in)'));
-
-  const note = $('signinNote');
-  if(signedName){
-    note.textContent = 'Signed in as ' + signedName +
-      (gsiProfile.email ? ' (' + gsiProfile.email + ')' : '') +
-      ' — your result is recorded under this account.';
-  } else if(offline){
-    note.textContent = 'Offline copy — Google sign-in and the class sheet are unavailable here, so results stay in the CSV.';
-  } else if(!SHEET_SUBMIT.clientId){
-    note.textContent = 'Sheet submit is not configured, so results stay in the CSV.';
-  } else {
-    note.textContent = 'Sign in with your school Google account to sit this test. Your name is taken from the account — there is nothing to type.';
-  }
-  note.style.display = '';
-  $('signinRetry').style.display = needSignIn ? '' : 'none';
-  $('testBegin').disabled = needSignIn;
+  $('signinNote').textContent = identityNote(identity);
+  $('signinNote').style.display = '';
+  $('signinRetry').style.display = identity.canStart ? 'none' : '';
+  $('testBegin').disabled = !identity.canStart;
 
   $('testStart').style.display = 'block';
   $('testQuiz').style.display = 'none';
   $('testResult').style.display = 'none';
   $('testOverlay').classList.add('show');
+}
+/* Who is sitting this attempt: the name to record, whether the test may start,
+   and — when it may not — which message to show. One place decides all three,
+   so the start gate and its explanation cannot drift apart. */
+function studentIdentity(){
+  const signed = gsiProfile ? (gsiProfile.name || gsiProfile.email || '') : '';
+  if(signed) return { name: signed, canStart: true, note:'signedin' };
+  if(location.protocol === 'file:') return { name:'(offline)', canStart: true, note:'offline' };
+  // Nothing to sign in for: keep the test usable and the result in the CSV.
+  if(!sheetSubmittable()) return { name:'(no sign-in)', canStart: true, note:'unconfigured' };
+  return { name:'', canStart: false, note: signinProblem || 'signedout' };
+}
+function identityNote(identity){
+  switch(identity.note){
+    case 'signedin':
+      return 'Signed in as ' + identity.name +
+        (gsiProfile.email ? ' (' + gsiProfile.email + ')' : '') +
+        ' — your result is recorded under this account.';
+    case 'offline':
+      return 'Offline copy — Google sign-in and the class sheet are unavailable here. Results stay in the CSV, labelled (offline), so they cannot be attributed to a student. Use the hosted version for named results.';
+    case 'unconfigured':
+      return 'Sheet submit is not configured, so results stay in the CSV.';
+    case 'network':
+      return 'Could not reach Google sign-in. Check the connection, then press Sign in with Google again.';
+    case 'profile':
+      return 'Signed in, but the account details could not be read. Press Sign in with Google to try again — if it keeps failing, tell your teacher.';
+    case 'cancelled':
+      return 'Sign-in was cancelled. Sign in with your school Google account to sit this test.';
+    default:
+      return 'Sign in with your school Google account to sit this test. Your name is taken from the account — there is nothing to type.';
+  }
 }
 /* Closing the test discards the Google access token and profile too, so the
    next student on a shared device is forced through the account chooser
@@ -1513,12 +1517,15 @@ function openTest(){
 function closeTest(){
   $('testOverlay').classList.remove('show');
   test = null; gsiToken = null; gsiProfile = null;
+  inFlightSubmit = null; signinProblem = ''; exitFailures = 0;
 }
 function beginTest(){
   if(!test) return;
   // The name always comes from the signed-in Google account (or the offline
   // marker); there is no field to validate.
-  if(!test.name){ toast('Sign in with Google to start the test'); return; }
+  if(!test.identity || !test.identity.canStart || !test.name){
+    toast('Sign in with Google to start the test'); return;
+  }
   const nm = test.name;
   test.index = 0; test.answers = []; test.selected = -1;
   $('testStart').style.display = 'none';
@@ -1597,7 +1604,9 @@ function finishTest(){
 function retakeTest(){
   if(!test) return;
   test.index = 0; test.answers = []; test.selected = -1; test.score = null;
-  lastSubmitted = null; submittedOk = false;   // a retake is a new attempt and is saved again
+  test.recorded = false;
+  lastSubmitted = null; submittedOk = false; inFlightSubmit = null; exitFailures = 0;
+  // a retake is a new attempt and is recorded and saved again
   $('testResult').style.display = 'none';
   $('testQuiz').style.display = 'block';
   renderTestQuestion();
@@ -1605,7 +1614,8 @@ function retakeTest(){
 /* Store the finished attempt in the browser's class list. No download — the
    exported CSV is produced on demand from the sidebar. */
 function saveRecord(){
-  if(!test || test.score == null) return;
+  if(!test || test.score == null || test.recorded) return;
+  test.recorded = true;   // one row per attempt, however often the screen re-renders
   const rec = {
     name: test.name, yearIdx: test.yearIdx, yearLabel: yearLabel(test.yearIdx),
     date: new Date().toISOString(), score: test.score, total: 10,
@@ -1698,29 +1708,40 @@ const SHEET_SUBMIT = {
   url: 'https://script.google.com/macros/s/AKfycbxA1DUeC_XClVFh1QM9HrFVjjnAQYhgrChJ6kTkNC9WPoY_n1x_p-AijljfqSo13XbwWg/exec',
   clientId: '277062244479-7sdej9i2ands0rvs79q6g70kgjbflh52.apps.googleusercontent.com'
 };
-let gsiToken = null;   // holds a Google OAuth access token after sign-in
-let gsiProfile = null; // {name,email} from the signed-in account; used as the student name
-let submittedOk = false;    // true once this attempt has reached the class sheet
-let pendingSubmit = null;   // in-flight submit, so Exit never sends a duplicate row
-let lastSubmitted = null;   // signature of the last auto-submitted attempt (prevents duplicates)
+let gsiToken = null;      // Google OAuth access token from the account chooser
+let gsiProfile = null;    // {name,email} from the signed-in account; the student name
+let submittedOk = false;  // true once this attempt has reached the class sheet
+let inFlightSubmit = null;// promise for the submit in progress, so Exit can wait for it
+let exitFailures = 0;     // consecutive failed Exit attempts (see exitTest)
+let signinProblem = '';   // '' | 'cancelled' | 'network' | 'profile'
+let lastSubmitted = null; // signature of the last auto-submitted attempt
 
+/* One place decides where a result can go. A file:// page can never reach
+   Google, so there the CSV path is the only one. */
+function sheetConfigured(){ return !!(SHEET_SUBMIT.url && SHEET_SUBMIT.clientId); }
+function sheetSubmittable(){ return sheetConfigured() && location.protocol !== 'file:'; }
+
+/* The GIS library reports whether it loaded, so a blocked request is a message
+   the student can read rather than a Start button that does nothing. */
 function loadGsi(cb){
-  if(!SHEET_SUBMIT.clientId || (window.google && google.accounts)) return cb();
-  let done = false;
-  const fire = ()=>{ if(done) return; done = true; cb(); };
+  if(!SHEET_SUBMIT.clientId || (window.google && google.accounts)) return cb(true);
+  let called = false;
+  const once = ok => { if(called) return; called = true; cb(ok); };
   const s = document.createElement('script');
   s.src = 'https://accounts.google.com/gsi/client';
   s.async = s.defer = true;
-  s.onload = fire;
-  s.onerror = fire;         // offline / blocked: fall back instead of hanging
+  s.onload = ()=>once(true);
+  s.onerror = ()=>once(false);
   document.head.appendChild(s);
-  setTimeout(fire, 4000);   // never leave the Start button dead on a stalled request
+  setTimeout(()=>once(false), 4000);   // a stalled request is a failure too
 }
 /* Ask Google who just signed in, using the access token we already hold, so
    the student never types their name. Returns {name,email}, or null if the
-   profile cannot be read (then the name field is shown as a fallback).
+   profile cannot be read — the caller then shows the reason and a retry.
    Tried twice: the Bearer-header form first, then a query-string GET, which is
-   a "simple" request and therefore survives deployments that block preflights. */
+   a "simple" request and survives deployments that block preflights. The
+   query-string form puts a short-lived, email-scope token in the URL; that
+   trade-off is recorded as L9 in SECURITY.md. */
 function resolveProfile(token){
   if(!token) return Promise.resolve(null);
   const url = 'https://www.googleapis.com/oauth2/v3/userinfo';
@@ -1737,17 +1758,15 @@ function resolveProfile(token){
 /* Sign in again (the token is ~1 h) purely to submit, then hand control back
    to the caller. Used by Exit when the automatic submit found no token. */
 function googleSignInThenSubmit(done){
-  const finish = ok => { if(done) done(ok); };
-  if(location.protocol === 'file:'){
-    const st = $('sheetStatus');
-    if(st) st.textContent = 'Sheet submit needs the online version.';
-    return finish(false);
+  const complete = ok => { if(done) done(ok); };
+  if(!sheetSubmittable()){
+    setSheetStatus('Sheet submit needs the online version.');
+    return complete(false);
   }
-  loadGsi(()=>{
-    const st = $('sheetStatus');
-    if(!(window.google && google.accounts && google.accounts.oauth2)){
-      st.textContent = 'Could not load Google sign-in';
-      return finish(false);
+  loadGsi(loaded=>{
+    if(!loaded || !(window.google && google.accounts && google.accounts.oauth2)){
+      setSheetStatus('Could not load Google sign-in');
+      return complete(false);
     }
     const client = google.accounts.oauth2.initTokenClient({
       client_id: SHEET_SUBMIT.clientId,
@@ -1755,43 +1774,63 @@ function googleSignInThenSubmit(done){
       prompt: 'select_account',   // always show the Google account chooser
       callback: resp=>{ gsiToken = resp.access_token || ''; submitToSheet({ done }); },
       error_callback: err=>{
-        st.textContent = 'Google sign-in cancelled' + (err && err.type ? ' (' + err.type + ')' : '');
-        finish(false);
+        setSheetStatus('Google sign-in cancelled' + (err && err.type ? ' (' + err.type + ')' : ''));
+        complete(false);
       }
     });
     client.requestAccessToken();
   });
 }
-// "Start 10-question test": sign in with Google first (if configured and not
-// already signed in), then open the test with the student's name taken from
-// their account. Falls back to opening the test if no clientId is set or the
-// Google library cannot load (offline still works: the name field appears).
+// "Start 10-question test": sign in with Google first, then open the test with
+// the student's name taken from their account. Offline, or with no sheet
+// configured, the test opens directly (CSV only).
 function startTestFlow(){
   // Opened by double-click (file://): Google OAuth cannot work from that
-  // origin, so go straight to the fallback instead of popping an
-  // "origin_mismatch" error page in the student's face.
-  if(location.protocol === 'file:'){ openTest(); return; }
-  if(!SHEET_SUBMIT.clientId || (gsiToken && gsiProfile)){ openTest(); return; }
-  loadGsi(()=>{
-    if(!(window.google && google.accounts && google.accounts.oauth2)){ openTest(); return; }
+  // origin, so never pop an "origin_mismatch" error page in the student's face.
+  if(!sheetSubmittable()){ openTest(); return; }
+  // A token without a profile means sign-in worked but the lookup did not;
+  // retry the lookup rather than making the student sign in again.
+  if(gsiToken && !gsiProfile){ retryProfile(); return; }
+  if(gsiProfile){ openTest(); return; }
+  signinProblem = '';
+  loadGsi(loaded=>{
+    if(!loaded || !(window.google && google.accounts && google.accounts.oauth2)){
+      signinProblem = 'network';
+      openTest(); return;
+    }
     const client = google.accounts.oauth2.initTokenClient({
       client_id: SHEET_SUBMIT.clientId,
       scope: 'openid email profile',
       prompt: 'select_account',   // always show the Google account chooser
       callback: resp=>{
         gsiToken = resp.access_token || '';
-        resolveProfile(gsiToken).then(p=>{ gsiProfile = p; openTest(); });
+        resolveProfile(gsiToken).then(p=>{
+          gsiProfile = p;
+          signinProblem = p ? '' : 'profile';
+          openTest();
+        });
       },
-      // If sign-in fails (account chooser dismissed, or 2FA/school policy
-      // blocks the account) the test does not start: online, the result is
-      // attributed to the account, so there is nothing to submit without it.
-      // openTest() shows the reason and a retry button.
+      // The test does not start without an account: online, the result is
+      // attributed to it. openTest() shows the reason and a retry button.
       error_callback: err=>{
-        toast('Google sign-in unavailable' + (err && err.type ? ' (' + err.type + ')' : ''));
+        const type = (err && err.type) || '';
+        signinProblem = /popup_closed|access_denied/.test(type) ? 'cancelled' : 'network';
         openTest();
       }
     });
     client.requestAccessToken();
+  });
+}
+/* Sign-in holds a token but the profile lookup failed. Retry the lookup only —
+   re-running the chooser was the loop this replaces. */
+function retryProfile(){
+  const btn = $('signinRetry');
+  btn.disabled = true;
+  resolveProfile(gsiToken).then(p=>{
+    btn.disabled = false;
+    gsiProfile = p;
+    signinProblem = p ? '' : 'profile';
+    openTest();
   });
 }
 function sheetSubmitUrl(payload){
@@ -1805,23 +1844,55 @@ function sheetSubmitUrl(payload){
    the student having to press anything. Skipped if this exact attempt has
    already been sent (e.g. the result screen is re-rendered). */
 function autoSubmitToSheet(){
-  if(!SHEET_SUBMIT.url || !test || test.score == null) return;
-  if(location.protocol === 'file:') return;   // offline copy: CSV only
+  if(!test || test.score == null || !sheetSubmittable()) return;
   const sig = [test.name, test.yearIdx, test.score, test.answers.join('')].join('|');
   if(sig === lastSubmitted) return;
   lastSubmitted = sig;
   submitToSheet({ auto:true });
 }
+function setSheetStatus(msg){
+  const el = $('sheetStatus');
+  if(el) el.textContent = msg;
+}
+/* Transport for one finished result: POST it, or fall back to the cookie-based
+   navigation path when fetch is blocked. Resolves true when the row is on its
+   way, so callers do not each re-implement the same branches. */
+function postResult(payload, tab){
+  return fetch(SHEET_SUBMIT.url, {
+    method : 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // text/plain avoids a CORS preflight
+    body   : JSON.stringify(payload)
+  })
+  .then(r => r.json())
+  .then(res=>{
+    if(tab) tab.close();
+    if(res && res.ok){
+      submittedOk = true;
+      setSheetStatus('Saved to class sheet' + (res.email ? ' as ' + res.email : ''));
+      return true;
+    }
+    setSheetStatus('Could not save: ' + ((res && res.error) || 'unknown error'));
+    // Token expired or rejected: drop it so Exit runs sign-in again.
+    if(res && /sign in/i.test(String(res.error || ''))) gsiToken = null;
+    return false;
+  })
+  .catch(()=>{
+    if(!tab){ setSheetStatus('Could not reach the class sheet.'); return false; }
+    tab.location.href = sheetSubmitUrl(payload);
+    setSheetStatus('Submitted via Google — check the Results tab.');
+    submittedOk = true;
+    return true;
+  });
+}
 function submitToSheet(opts){
   const auto = !!(opts && opts.auto);
   const done = opts && opts.done;
-  const finish = ok => { pendingSubmit = null; if(done) done(ok); };
-  if(!test || test.score == null) return finish(false);
-  const st = $('sheetStatus');
+  const complete = ok => { inFlightSubmit = null; if(done) done(ok); };
+  if(!test || test.score == null) return complete(false);
   // Require a Google sign-in before submitting (the server re-checks this).
   if(SHEET_SUBMIT.clientId && !gsiToken){
-    if(st) st.textContent = 'Sign in with Google to submit.';
-    return finish(false);
+    setSheetStatus('Sign in with Google to submit.');
+    return complete(false);
   }
   const payload = {
     accessToken: gsiToken || '',
@@ -1832,70 +1903,42 @@ function submitToSheet(opts){
     responses: test.answers.map(a => LETTERS[a]),
     wrong:    test.wrong.map(i => 'Q' + (i+1)).join(', ')
   };
-  if(st) st.textContent = auto ? 'Saving to the class sheet…' : 'Submitting…';
+  setSheetStatus(auto ? 'Saving to the class sheet…' : 'Submitting…');
   // A retry opens a tab before the await, so the popup blocker allows the
-  // cookie-based fallback below. The automatic submit has no click to hang
-  // that on, so it goes straight to fetch.
+  // cookie-based fallback. The automatic submit has no click to hang that on.
   let tab = null;
   if(!auto){ try { tab = window.open('', '_blank'); } catch(e){ tab = null; } }
-  pendingSubmit = fetch(SHEET_SUBMIT.url, {
-    method : 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // text/plain avoids a CORS preflight
-    body   : JSON.stringify(payload)
-  })
-  .then(r => r.json())
-  .then(res=>{
-    if(tab) tab.close();
-    if(res && res.ok){
-      submittedOk = true;
-      if(st) st.textContent = 'Saved to class sheet' + (res.email ? ' as ' + res.email : '');
-      if(auto) toast('Result saved to the class sheet');
-      finish(true);
-      return true;
-    } else {
-      if(st) st.textContent = 'Could not save: ' + ((res && res.error) || 'unknown error');
-      // Token expired or rejected: drop it so Exit runs sign-in again.
-      if(res && /sign in/i.test(String(res.error || ''))) gsiToken = null;
-      finish(false);
-      return false;
-    }
-  })
-  .catch(()=>{
-    if(tab){
-      tab.location.href = sheetSubmitUrl(payload);
-      if(st) st.textContent = 'Submitted via Google — check the Results tab.';
-      submittedOk = true;
-      finish(true);
-      return true;
-    } else {
-      if(st) st.textContent = 'Could not reach the class sheet.';
-      finish(false);
-      return false;
-    }
+  inFlightSubmit = postResult(payload, tab);
+  inFlightSubmit.then(ok=>{
+    if(ok && auto) toast('Result saved to the class sheet');
+    complete(ok);
   });
 }
 /* The single action on the results screen: send the result if it has not been
-   sent yet, then close the test. If the automatic submit already succeeded,
-   this is just a close. */
+   sent yet, then close. A failed send keeps the screen open so the student can
+   press Exit again; the second consecutive failure closes anyway rather than
+   trapping them in the overlay. */
 function exitTest(){
-  const leave = ok => {
-    if(!ok) toast('Result not saved to the class sheet');
-    closeTest();
-  };
   if(!test || test.score == null){ closeTest(); return; }
-  if(location.protocol === 'file:' || !SHEET_SUBMIT.url || !SHEET_SUBMIT.clientId || submittedOk){
-    closeTest(); return;
-  }
+  if(!sheetSubmittable() || submittedOk){ closeTest(); return; }
   const btn = $('exitTest');
   btn.disabled = true;
+  const done = ok => {
+    btn.disabled = false;
+    if(ok){ closeTest(); return; }
+    exitFailures++;
+    if(exitFailures >= 2){
+      toast('Result not saved — closing without it');
+      closeTest();
+    } else {
+      toast('Result not saved — press Exit to try again');
+    }
+  };
   // An automatic submit may still be in flight: wait for that one instead of
   // writing a second row.
-  if(pendingSubmit){
-    pendingSubmit.then(ok=>{ btn.disabled = false; leave(ok); });
-    return;
-  }
-  if(gsiToken) submitToSheet({ done: ok=>{ btn.disabled = false; leave(ok); } });
-  else googleSignInThenSubmit(ok=>{ btn.disabled = false; leave(ok); });
+  if(inFlightSubmit){ inFlightSubmit.then(done); return; }
+  if(gsiToken) submitToSheet({ done });
+  else googleSignInThenSubmit(done);
 }
 
 /* ---------- boot ---------- */

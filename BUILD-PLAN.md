@@ -68,25 +68,26 @@ Single-page app, no framework. `index.html` is organised into numbered sections 
 styling block. Line landmarks (current file):
 
 ```
-   1–290     HTML shell + CSS (tokens, layout, cards, tabs, print styles)
- 291–338     Test-mode markup (overlay, results table, Google submit button)
- 339–563     §1  Music note model + hand-drawn SVG renderer (fallback)
- 564–611     §1b VexFlow renderer (primary notation path)
- 612–782         Metric beaming logic
- 783–796         Concept (non-staff) graphics for Pre-primary / Year 1
- 797–825     §2  Rhythm pattern library (per year, from the Addendum)
- 826–853     §3  Year groups + time-signature totals
- 854–867         Metric helpers
- 868–997     §4  Question generator (staff questions)
- 998–1145        Concept question generator
-1146–1183    §5  App state + practice-mode UI
-1184–1403        Note values reference guide (VexFlow glyphs + fallback)
-1404–1429        Event wiring
-1430–1574    §6  Test mode (fixed 10 questions) + overlay flow
-1575–1623        CSV export
-1624–1646        Test/results event wiring
-1647–1764    §6b Google Sheet submit (optional; internet only)
-1765–1775        Boot
+    1–292     HTML shell + CSS (tokens, layout, cards, tabs, print styles)
+  293–331     Test-mode markup (overlay, review table, Exit + status line)
+  333–336     Script tags (VexFlow from lib/, then the app)
+  337–561     §1  Music note model + hand-drawn SVG renderer (fallback)
+  562–609     §1b VexFlow renderer (primary notation path)
+  610–780         Metric beaming logic
+  781–794         Concept (non-staff) graphics for Pre-primary / Year 1
+  795–823     §2  Rhythm pattern library (per year, from the Addendum)
+  824–851     §3  Year groups + time-signature totals
+  852–865         Metric helpers
+  866–1143    §4  Question generator (staff questions 877+)
+  996–1143        Concept question generator
+ 1144–1427    §5  App state + practice-mode UI
+ 1182–1401        Note values reference guide (VexFlow glyphs + fallback)
+ 1402–1427        Practice-mode event wiring
+ 1428–1698    §6  Test mode (fixed 10 questions) + overlay flow (1465)
+ 1628–1676        CSV export (sidebar)
+ 1677–1698        Test/results event wiring
+ 1699–1944    §6b Google Sheet submit (sign-in, profile, submit, Exit)
+ 1945–1954        Boot
 ```
 
 **Data flow**
@@ -199,7 +200,7 @@ answer-key row per year.
 ### Phase 6b — Delivered increments (post-release)
 **Deliverable:** the features shipped after the initial release, on `main`.
 
-- [x] **Note Values reference guide** (`§5`, `index.html` 1184–1403): a left column showing each
+- [x] **Note Values reference guide** (`§5`, `index.html` 1182–1401): a left column showing each
       note value with its matching rest, fraction and 4/4 beats. Symbols drawn from VexFlow so
       the guide matches the questions, with the hand-drawn set as fallback. Only shown when the
       viewport fits all three columns (the options have a ~702 px floor). Fixed three
@@ -209,7 +210,7 @@ answer-key row per year.
       (`#202B64` / `#0A8440` / `#C1D52D`), 4 px lime rule under the header; logos cropped from
       the A4 artwork and stripped of metadata; both colourways committed; the Pages workflow
       copies both SVGs.
-- [x] **Google Sheet submit** (`§6b`, `index.html` 1647–1764, `Code.gs`,
+- [x] **Google Sheet submit** (`§6b`, `index.html` 1699–1944, `Code.gs`,
       `GOOGLE-SHEET-SUBMIT.md`): optional, additive, internet-only. Sign-in at test start,
       token captured once, results-screen submit; `text/plain` POST to avoid a CORS preflight;
       top-level-navigation fallback (`doGet?action=submit`) for restricted deployments.

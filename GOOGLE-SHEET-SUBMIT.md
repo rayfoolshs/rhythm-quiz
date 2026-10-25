@@ -113,7 +113,9 @@ There is no CSV button on this screen; the sidebar still exports the class list.
 
 `exitTest()` waits for any submit already in flight rather than writing a second
 row, and falls back to a fresh Google sign-in if the access token has expired.
-If the write fails, the student sees the reason on `#sheetStatus` and a toast.
+If the write fails, the result screen stays open with the reason on
+`#sheetStatus` and a toast, so the student can press **Exit** again; a second
+consecutive failure closes anyway rather than trapping them in the overlay.
 
 Optional CSS (add anywhere in the `<style>` block) for a Google-styled button:
 

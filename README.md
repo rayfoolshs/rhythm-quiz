@@ -41,5 +41,6 @@ See `rhythm-quiz-package/README.md` for the full year-by-year content breakdown.
 
 ## Notes
 - Notation is vector SVG (via VexFlow), so it stays sharp at any size and prints cleanly.
+- The double-clicked offline copy cannot sign in to Google, so it labels its rows `(offline)` in the CSV. Named, sheet-submitted results need the hosted version.
 - Time signatures used: 2/4, 3/4, 4/4, 5/4, 6/8, 7/8, 9/8, 12/8.
 - Curriculum content: School Curriculum and Standards Authority (SCSA), *The Arts | Music — Scope and sequence, Pre-primary–Year 10*, Addendum. Notation engine: VexFlow (MIT).
