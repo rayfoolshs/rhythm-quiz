@@ -22,6 +22,10 @@ Keep `index.html` and the `lib/` folder together — `index.html` loads the nota
 
 The far-left card keeps a live tally of which concepts are causing errors, with the Reference Guide beside it. Each answered question is tagged with the value that was missing and its time signature, and the panel draws the class's error rate per concept as a bar (green, amber or red). It is scoped to the selected year — only concepts that year's questions can actually ask about appear — and it combines the saved test results with the practice answers from the current session. The longest red bar is named as the next mini-lesson to reteach.
 
+## Numeracy diagnostic
+
+The card above the Score, *Visualising the Numeracy Diagnostic Live*, re-reads the same answers as four numeracy skills — **decimal / fraction pacing** (the missing length is a fraction of a beat), **denominator anchoring** (questions that carry a time signature), **missing addends** (every question: the blank is the unknown) and **fractional equivalence** (answers that combine several note values to equal the blank). It shows the class **mastery rate** — the inverse of the error rate above — on a 0–100 scale, hides skills that the selected year cannot ask about, and names the weakest skill as the next numeracy focus.
+
 ## Notation
 All notation is drawn as vector SVG (VexFlow). Beams are grouped strictly by the beat — **one crotchet in simple time (2/4, 3/4, 4/4, 5/4)**, **one dotted crotchet in compound time (6/8, 9/8, 12/8)** and **2 + 2 + 3 eighths in 7/8** — so a beam never crosses a beat or breaks the pulse of the bar.
 

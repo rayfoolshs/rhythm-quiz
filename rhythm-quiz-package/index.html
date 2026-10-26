@@ -25,6 +25,7 @@
     --bad:#c23b52;
     --badbg:#fdeced;
     --amber:#b7791f;
+    --teal:#0d9488;     /* numeracy mastery (kept distinct from the error-rate green) */
   }
   *{box-sizing:border-box}
   html,body{margin:0;padding:0}
@@ -162,6 +163,25 @@
   .cmbaxis{display:none; justify-content:space-between; font-size:.62rem; color:var(--muted); margin-top:4px; font-variant-numeric:tabular-nums}
   .cmbnote{font-size:.72rem; color:var(--muted); margin-top:10px; border-top:1px dashed var(--line); padding-top:8px}
   .cmbnote b{color:var(--ink)}
+  /* --- live numeracy diagnostic (right column, above the score) --- */
+  .nmbrow{display:grid; grid-template-columns:1fr auto; grid-template-areas:"label val" "track track";
+    gap:5px 8px; align-items:end; margin-bottom:12px}
+  .nmbrow:last-child{margin-bottom:0}
+  .nmblabel{grid-area:label; font-size:.78rem; line-height:1.25}
+  .nmblabel b{font-weight:600}
+  .nmblabel span{display:block; font-size:.7rem; color:var(--muted)}
+  .nmbval{grid-area:val; font-weight:800; font-variant-numeric:tabular-nums; color:var(--muted); white-space:nowrap}
+  .nmbval.high{color:var(--teal)}
+  .nmbval.mid{color:var(--amber)}
+  .nmbval.low{color:var(--bad)}
+  .nmbtrack{grid-area:track; position:relative; height:16px; background:#f2f4f9; border-radius:4px; overflow:hidden}
+  .nmbtrack::before{content:""; position:absolute; inset:0; pointer-events:none;
+    background-image:repeating-linear-gradient(to right, var(--line) 0 1px, transparent 1px 20%)}
+  .nmbfill{position:relative; height:100%; border-radius:4px; transition:width .3s}
+  .nmbfill.high{background:var(--teal)}
+  .nmbfill.mid{background:var(--amber)}
+  .nmbfill.low{background:var(--bad)}
+  .nmbfill.none{background:#dfe3ee}
   .hint{font-size:.82rem; color:var(--muted); margin-top:8px}
   .keypanel{display:none}
   .keypanel.show{display:block}
@@ -256,6 +276,7 @@
           <tbody id="refBody"></tbody>
         </table>
       </div>
+
     </aside>
 
     <!-- QUIZ -->
@@ -289,6 +310,15 @@
     <!-- SIDE -->
     <aside>
       <div class="card">
+        <h2>Visualising the Numeracy Diagnostic Live</h2>
+        <p class="tiny">Class mastery rate per numeracy skill, read from the same answers as the Concept Mastery Breakdown. A short red bar is the next numeracy focus.</p>
+        <div id="nmbList"></div>
+        <div class="cmbaxis" id="nmbAxis"><span>0</span><span>20</span><span>40</span><span>60</span><span>80</span><span>100</span></div>
+        <p class="tiny" style="text-align:center; margin:4px 0 0">Class mastery rate (%)</p>
+        <p class="cmbnote" id="nmbNote"></p>
+      </div>
+
+      <div class="card" style="margin-top:16px">
         <h2>Score</h2>
         <div class="stats">
           <div class="stat"><div class="n" id="statCorrect">0</div><div class="l">Correct</div></div>
@@ -1251,6 +1281,23 @@ function atomNames(atoms){
   });
   return out;
 }
+// The same answers, re-read as numeracy (see the diagnostic below): is the missing
+// length a fraction of a beat, and must several values be combined to make it?
+function isFractionalBeat(sig, dur){
+  if(!(dur > 0)) return false;
+  const beats = dur / beatUnit(sig);
+  return Math.abs(beats - Math.round(beats)) > 1e-6;
+}
+function isComposite(atoms){
+  let events = 0;
+  (atoms || []).forEach(a=>{
+    if(!a) return;
+    if(a.beam) events += a.beam.length;
+    else if(a.tie) events += 2;
+    else events += 1;
+  });
+  return events >= 2;
+}
 // One row per concept, in teaching order. A question counts towards every concept
 // it involves (a beamed group of quavers and semiquavers counts as both). The
 // note-value rows match the plain value only: dotted forms are the "dotted" row
@@ -1276,14 +1323,23 @@ const PP_CONCEPTS = [
 ];
 // The concepts one question tests: the value that was missing (the correct answer)
 // and its time signature. Picture questions (Pre-primary) are matched by prompt.
+// Each question also carries the numeracy tags the diagnostic below reads, so both
+// panels are computed from this one pass over the same answers.
 function conceptsFor(q, yi){
   if(YEARS[yi].id === 'PP'){
     const hit = PP_CONCEPTS.find(c=>c.re.test(q.prompt || ''));
-    return [hit ? hit.id : 'pp-count'];
+    return [hit ? hit.id : 'pp-count', 'num:addends'];
   }
   const answer = (q.options || []).find(o=>o.correct);
-  const ids = CONCEPTS.filter(c=>c.match((answer && answer.atoms) || [])).map(c=>c.id);
+  const atoms = (answer && answer.atoms) || [];
+  const ids = CONCEPTS.filter(c=>c.match(atoms)).map(c=>c.id);
   if(q.sig) ids.push('sig:' + q.sig);
+  // 'num:addends' is every question (the blank is the unknown addend), so its
+  // tally doubles as the answered-question count.
+  ids.push('num:addends');
+  if(q.sig) ids.push('num:anchor');
+  if(isFractionalBeat(q.sig, q.target == null ? cellDur(atoms) : q.target)) ids.push('num:pacing');
+  if(isComposite(atoms)) ids.push('num:equiv');
   return ids;
 }
 // What a year can actually ask about. Sampled from the generator with a fixed seed
@@ -1349,9 +1405,9 @@ function conceptRows(yi, stats){
     .forEach(sig=>rows.push({id:'sig:'+sig, label:sig + ' time signature'}));
   return rows;
 }
-function renderConceptBreakdown(){
-  const yi = state.yearIdx;
-  const stats = conceptTotals(yi);
+function renderConceptBreakdown(yi, stats){
+  if(yi === undefined) yi = state.yearIdx;
+  if(!stats) stats = conceptTotals(yi);
   const rows = conceptRows(yi, stats);
   $('cmbList').innerHTML = rows.map(r=>{
     const s = stats.get(r.id), n = s ? s.attempts : 0;
@@ -1389,6 +1445,65 @@ function renderConceptBreakdown(){
       (worst ? 'Next mini-lesson: <b>' + esc(worst.label) + '</b> at ' + worst.pct + '% wrong.'
              : 'No concept stands out as a mini-lesson need yet.')
     : 'No answers recorded for this year yet - the bars fill as questions are answered.';
+}
+
+/* ---------- live numeracy diagnostic (right column, above the score) ----------
+   The same tally, re-read as numeracy skills: which fraction and denominator
+   ideas the class is still getting wrong. Mastery rate is the share answered
+   correctly, so it is the inverse of the error rate shown above. */
+const NUMERACY = [
+  { id:'num:pacing',  label:'Decimal / fraction pacing', sub:'Speed of calculation' },
+  { id:'num:anchor',  label:'Denominator anchoring',     sub:'Working within 3/4 vs 4/4' },
+  { id:'num:addends', label:'Missing addends',           sub:'Completing the equations' },
+  { id:'num:equiv',   label:'Fractional equivalence',    sub:'e.g. 2 half-notes = 1 whole' }
+];
+function numeracyRows(yi, stats){
+  const can = new Set(yearConceptIds(yi));
+  return NUMERACY.map(n=>{
+    const s = stats.get(n.id);
+    return { id:n.id, label:n.label, sub:n.sub, attempts: s ? s.attempts : 0, wrong: s ? s.wrong : 0,
+             canAsk: n.id === 'num:addends' || can.has(n.id) };
+  }).filter(r=>r.canAsk || r.attempts);
+}
+function renderNumeracy(yi, stats){
+  if(yi === undefined) yi = state.yearIdx;
+  if(!stats) stats = conceptTotals(yi);
+  const rows = numeracyRows(yi, stats);
+  $('nmbList').innerHTML = rows.map(r=>{
+    const has = r.attempts > 0;
+    const pct = has ? Math.round(100 * (1 - r.wrong / r.attempts)) : 0;
+    const cls = !has ? 'none' : pct >= 75 ? 'high' : pct >= 50 ? 'mid' : 'low';
+    const valCls = !has ? '' : ' ' + cls;
+    const detail = has ? (r.attempts - r.wrong) + ' right of ' + r.attempts + ' answered' : 'not assessed yet';
+    return '<div class="nmbrow" title="' + esc(r.label + ': ' + detail) + '">' +
+      '<div class="nmblabel"><b>' + esc(r.label) + '</b><span>' + esc(r.sub) + '</span></div>' +
+      '<div class="nmbval' + valCls + '">' + (has ? pct + '%' : '—') + '</div>' +
+      '<div class="nmbtrack"><div class="nmbfill ' + cls + '" style="width:' + (has ? Math.max(pct, 2) : 0) + '%"></div></div>' +
+    '</div>';
+  }).join('') || '<p class="tiny">No numeracy skills to track for this year yet.</p>';
+  $('nmbAxis').style.display = rows.length ? 'flex' : 'none';
+  // The weakest skill (lowest mastery) is the next numeracy focus, once the class
+  // has answered enough for it to mean anything.
+  let worst = null;
+  rows.forEach(r=>{
+    if(r.attempts < 3 || r.wrong === 0) return;
+    const rate = 1 - r.wrong / r.attempts;
+    if(!worst || rate < worst.rate) worst = { label:r.label, rate, pct:Math.round(rate * 100) };
+  });
+  const addends = stats.get('num:addends');
+  const answered = addends ? addends.attempts : 0;
+  $('nmbNote').innerHTML = answered
+    ? 'Class mastery rate across <b>' + answered + '</b> answered question' + (answered === 1 ? '' : 's') + '. ' +
+      (worst ? 'Next numeracy focus: <b>' + esc(worst.label) + '</b> at ' + worst.pct + '% mastery.'
+             : 'No numeracy skill stands out as a focus yet.')
+    : 'No answers recorded for this year yet - mastery rates appear as questions are answered.';
+}
+// Both left-column diagnostics read one pass over the same answers.
+function renderDiagnostics(){
+  const yi = state.yearIdx;
+  const stats = conceptTotals(yi);
+  renderConceptBreakdown(yi, stats);
+  renderNumeracy(yi, stats);
 }
 
 /* ---------- note values reference guide ---------- */
@@ -1601,7 +1716,7 @@ function updateStats(){
   $('statCorrect').textContent=state.correct;
   $('statTotal').textContent=state.total;
   $('statStreak').textContent=state.streak;
-  renderConceptBreakdown();
+  renderDiagnostics();
 }
 
 function renderKey(){
@@ -1837,7 +1952,7 @@ function saveRecord(){
   };
   const recs = loadRecords(); recs.push(rec); storeRecords(recs);
   renderRecords();
-  renderConceptBreakdown();   // the new submission counts towards the breakdown
+  renderDiagnostics();   // the new submission counts towards both diagnostics
 }
 
 /* ---------- CSV ---------- */
