@@ -18,6 +18,10 @@ Keep `index.html` and the `lib/` folder together — `index.html` loads the nota
 5. The **Answer key** panel records answers for the teacher. **Restart score** clears it.
 6. The page prints cleanly (browser → Print / Save as PDF) for a paper copy.
 
+## Concept mastery breakdown
+
+The far-left card keeps a live tally of which concepts are causing errors, with the Reference Guide beside it. Each answered question is tagged with the value that was missing and its time signature, and the panel draws the class's error rate per concept as a bar (green, amber or red). It is scoped to the selected year — only concepts that year's questions can actually ask about appear — and it combines the saved test results with the practice answers from the current session. The longest red bar is named as the next mini-lesson to reteach.
+
 ## Notation
 All notation is drawn as vector SVG (VexFlow). Beams are grouped strictly by the beat — **one crotchet in simple time (2/4, 3/4, 4/4, 5/4)**, **one dotted crotchet in compound time (6/8, 9/8, 12/8)** and **2 + 2 + 3 eighths in 7/8** — so a beam never crosses a beat or breaks the pulse of the bar.
 

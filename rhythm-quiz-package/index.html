@@ -61,6 +61,14 @@
      options have a fixed intrinsic width (~702px). Only add the third
      column once the viewport can actually hold all three. */
   .grid{display:grid; grid-template-columns:290px 1.55fr 1fr; gap:16px}
+  /* On a wide screen the left column widens and the reference guide and the
+     concept breakdown sit side by side; below that the breakdown stacks under
+     the guide, so the quiz column keeps its ~702px minimum. */
+  @media (min-width:1670px){
+    .wrap{max-width:1720px}
+    .grid{grid-template-columns:600px 1.55fr 1fr}
+    .guide{grid-template-columns:1fr 1fr}
+  }
   @media (max-width:1399px){
     /* not enough width for three columns: keep the guide on the left,
        stacked above the quiz, with the score column beside them */
@@ -119,7 +127,7 @@
   .learnlist .desc{font-size:.82rem; color:var(--muted)}
   .learnlist .desc b{color:var(--ink)}
   /* --- note values reference guide (left column) --- */
-  .guide{align-self:start}
+  .guide{align-self:start; display:grid; gap:16px}
   .reftable{width:100%; max-width:480px; margin:0 auto; border-collapse:collapse; font-size:.76rem}
   .reftable th,.reftable td{padding:5px 3px; border-bottom:1px dashed var(--line); text-align:left; vertical-align:middle}
   .reftable thead th{
@@ -135,6 +143,25 @@
   .reftable td.symr .none{color:var(--line); font-weight:700}
   .reftable .refsym{display:block; margin:0 auto}
   .sigchip{display:inline-block; background:#eef1f9; color:var(--brand); border-radius:6px; padding:1px 7px; font-weight:700; font-size:.78rem; margin-right:5px}
+  /* --- concept mastery breakdown (left column, far left) --- */
+  .cmbrow{margin-bottom:9px}
+  .cmbrow:last-child{margin-bottom:0}
+  .cmbhead{display:flex; align-items:baseline; gap:6px; font-size:.74rem; line-height:1.2}
+  .cmbhead .nm{flex:1 1 auto; font-weight:600}
+  .cmbhead .cnt{font-size:.64rem; color:var(--muted); font-variant-numeric:tabular-nums}
+  .cmbhead .pct{font-weight:800; font-variant-numeric:tabular-nums; color:var(--muted)}
+  .cmbhead .pct.low{color:var(--good)}
+  .cmbhead .pct.mid{color:var(--amber)}
+  .cmbhead .pct.high{color:var(--bad)}
+  .cmbtrack{height:9px; background:#eef1f9; border-radius:5px; overflow:hidden; margin-top:3px}
+  .cmbfill{height:100%; border-radius:5px; transition:width .3s}
+  .cmbfill.low{background:var(--good)}
+  .cmbfill.mid{background:var(--amber)}
+  .cmbfill.high{background:var(--bad)}
+  .cmbfill.none{background:#dfe3ee}
+  .cmbaxis{display:none; justify-content:space-between; font-size:.62rem; color:var(--muted); margin-top:4px; font-variant-numeric:tabular-nums}
+  .cmbnote{font-size:.72rem; color:var(--muted); margin-top:10px; border-top:1px dashed var(--line); padding-top:8px}
+  .cmbnote b{color:var(--ink)}
   .hint{font-size:.82rem; color:var(--muted); margin-top:8px}
   .keypanel{display:none}
   .keypanel.show{display:block}
@@ -203,8 +230,16 @@
 
 <main class="wrap">
   <div class="grid">
-    <!-- NOTE VALUES REFERENCE GUIDE (left) -->
+    <!-- LEFT COLUMN: concept breakdown (far left) then the note values reference guide -->
     <aside class="guide">
+      <div class="card">
+        <h2>Concept Mastery Breakdown</h2>
+        <p class="tiny">Error rate per concept, gathered live from the answers given for the year above. The longest red bar is the next mini-lesson to reteach.</p>
+        <div id="cmbList"></div>
+        <div class="cmbaxis" id="cmbAxis"><span>0%</span><span>50%</span><span>100%</span></div>
+        <p class="cmbnote" id="cmbNote"></p>
+      </div>
+
       <div class="card">
         <h2>Reference Guide: Note Values</h2>
         <p class="tiny">Each note value is shown with its matching rest. Fraction is of a semibreve (whole note). Beats are counted in 4/4 time, where a crotchet = 1 beat.</p>
@@ -480,7 +515,9 @@ function tiedGlyph(two, x){
   const n1 = two[0].n || 'crotchet', n2 = two[1].n || 'crotchet';
   const cx1 = x+14, cx2 = x+46;
   let svg = notehead(cx1, n1!=='minim') + stem(cx1);
+  if(n1.indexOf('dotted-') === 0) svg += dotat(cx1+14);
   svg    += notehead(cx2, n2!=='minim') + stem(cx2);
+  if(n2.indexOf('dotted-') === 0) svg += dotat(cx2+14);
   svg    += `<path d="M ${cx1+7} ${CY+6} Q ${(cx1+cx2)/2} ${CY+17} ${cx2-6} ${CY+6}" fill="none" stroke="#161226" stroke-width="1.7"/>`;
   return {svg, w:66};
 }
@@ -817,6 +854,10 @@ const PATTERNS = [
   P('qde',  [{n:'dotted-crotchet'},{n:'quaver'}], 7, 'Dotted crotchet + quaver'),
   P('tieq', [{tie:[{n:'crotchet'},{n:'crotchet'}]}], 8, 'Two crotchets tied'),
   P('tiee', [{tie:[{n:'quaver'},{n:'quaver'}]}], 8, 'Two quavers tied'),
+  // Compound-time ties (a beat of 6/8, 9/8 or 12/8 is a dotted crotchet):
+  P('tieqc',[{tie:[{n:'quaver'},{n:'crotchet'}]}], 8, 'Quaver + crotchet tied'),
+  P('tiecq',[{tie:[{n:'crotchet'},{n:'quaver'}]}], 8, 'Crotchet + quaver tied'),
+  P('tiedd',[{tie:[{n:'dotted-crotchet'},{n:'dotted-crotchet'}]}], 8, 'Two dotted crotchets tied'),
   P('tri',  [{beam:[{n:'quaver'},{n:'quaver'},{n:'quaver'}],triplet:true}], 9, 'Quaver triplet'),
   P('sync', [{n:'quaver'},{n:'crotchet'},{n:'quaver'}], 10, 'Syncopated rhythm (quaver–crotchet–quaver)')
 ];
@@ -856,7 +897,15 @@ const PARTITIONS = {
   '2/4':  [[1,1],[2],[1.5,0.5],[0.5,1,0.5],[1,0.5,0.5]],
   '3/4':  [[3],[1,1,1],[2,1],[1,2],[1.5,1.5],[1,0.5,1.5],[0.5,1,1.5]],
   '4/4':  [[1,1,1,1],[2,2],[2,1,1],[1,1,2],[1.5,0.5,2],[1.5,1,1.5],[3,1],[4]],
-  '6/8':  [[1.5,1.5],[3]],
+  // 6/8 is compound duple: two dotted-crotchet beats per bar. Each template keeps
+  // every cell inside one beat (so a beam never breaks the pulse), but the beats
+  // themselves are subdivided in the common ways (three quavers, crotchet+quaver,
+  // quaver+crotchet). Only two templates made Year 8 questions near-identical.
+  '6/8':  [[3],[1.5,1.5],
+           [1,0.5,1.5],[1.5,1,0.5],[0.5,1,1.5],[1.5,0.5,1],
+           [1,0.5,0.5,1],[0.5,1,1,0.5],[1,0.5,1,0.5],[0.5,1,0.5,1],
+           [1,0.5,0.5,0.5,0.5],[0.5,0.5,0.5,1,0.5],[1.5,0.5,0.5,0.5],
+           [0.5,0.5,0.5,1.5],[0.5,0.5,0.5,0.5,0.5,0.5]],
   '9/8':  [[1.5,1.5,1.5],[3,1.5],[1.5,3]],
   '12/8': [[1.5,1.5,1.5,1.5],[3,3],[3,1.5,1.5],[1.5,1.5,3]],
   '7/8':  [[1,1,1.5],[1.5,1,1],[1,1.5,1]],
@@ -904,9 +953,12 @@ function makeQuestion(yearIdx, mode){
 
     const blankIdx = Math.floor(rnd()*tpl.length);
     const target = tpl[blankIdx];
-    // Prefer the rhythm newly introduced in this year (e.g. a dotted minim in Year 4).
+    // Prefer the rhythm newly introduced in this year (e.g. a dotted minim in Year 4),
+    // but only about half the time. Always answering with the newest pattern hides the
+    // rest of the year's focus rhythms: once Year 8 gained compound-time ties, every
+    // 6/8 answer became a tied pair and the dotted crotchet/minim stopped appearing.
     const preferNew = slotOpts[blankIdx].filter(p => p.since === yearIdx);
-    const answer = pick(preferNew.length ? preferNew : slotOpts[blankIdx]);
+    const answer = pick(preferNew.length && rnd() < 0.5 ? preferNew : slotOpts[blankIdx]);
 
     // distractors: distinct durations, closest first
     const otherDurs = durs.filter(d => !eq(d,target));
@@ -1145,7 +1197,7 @@ function makeConceptQuestion(yearIdx){
    5. APP STATE + UI
    ============================================================ */
 const state = { yearIdx:2, q:null, answered:false, selected:-1,
-                correct:0, total:0, streak:0, history:[] };
+                correct:0, total:0, streak:0, history:[], conceptTally:{}, answeredByYear:{} };
 
 const $ = id => document.getElementById(id);
 const LETTERS = ['A','B','C','D'];
@@ -1177,6 +1229,166 @@ function renderLearn(){
     ul.appendChild(li);
   });
   $('learnList').innerHTML=''; $('learnList').appendChild(ul);
+}
+
+/* ---------- concept mastery breakdown (left column) ----------
+   Every answered question is tagged with the concepts it tests, and the class's
+   error rate for each concept is drawn as a bar. The panel is scoped to the
+   selected year: a bar only appears if that year's questions can actually ask
+   about the concept - plus anything already answered, so no data is ever hidden.
+   It aggregates the saved test records (every submission in this browser) with
+   the practice answers from this session. */
+const isRestName = n => /-rest$/.test(n);
+// Every note/rest name in a rhythm, however it is nested (plain, beamed or tied).
+function atomNames(atoms){
+  const out = [];
+  (atoms || []).forEach(a=>{
+    if(!a) return;
+    if(a.n) out.push(a.n);
+    else if(a.r) out.push(a.r);
+    else if(a.beam) a.beam.forEach(m=>out.push(m.n));
+    else if(a.tie) a.tie.forEach(t=>out.push(t.n || 'crotchet'));
+  });
+  return out;
+}
+// One row per concept, in teaching order. A question counts towards every concept
+// it involves (a beamed group of quavers and semiquavers counts as both). The
+// note-value rows match the plain value only: dotted forms are the "dotted" row
+// and rests are the "rests" row, so each value is reported under one heading.
+const CONCEPTS = [
+  { id:'rests',      label:'Rests (silent)',          match:a=>atomNames(a).some(isRestName) },
+  { id:'dotted',     label:'Dotted notes (extended)', match:a=>atomNames(a).some(isDottedName) },
+  { id:'ties',       label:'Ties (held over)',        match:a=>a.some(x=>x.tie) },
+  { id:'triplet',    label:'Triplets (three in two)', match:a=>a.some(x=>x.beam && x.triplet) },
+  { id:'semiquaver', label:'Semiquavers (0.25 beat)', match:a=>atomNames(a).some(n=>n==='semiquaver') },
+  { id:'quaver',     label:'Quavers (0.5 beat)',      match:a=>atomNames(a).some(n=>n==='quaver') },
+  { id:'crotchet',   label:'Crotchets (1 beat)',      match:a=>atomNames(a).some(n=>n==='crotchet') },
+  { id:'minim',      label:'Minims (2 beats)',        match:a=>atomNames(a).some(n=>n==='minim') },
+  { id:'semibreve',  label:'Semibreves (4 beats)',    match:a=>atomNames(a).some(n=>n==='semibreve') }
+];
+// Pre-primary asks about pictures, not notation, so its concepts are the ideas in
+// the year list and they are matched on the prompt rather than on note values.
+const PP_CONCEPTS = [
+  { id:'pp-beat',      label:'Steady beat',              re:/steady beat|four sounds/i },
+  { id:'pp-silence',   label:'Sound and silence',        re:/silence|silent/i },
+  { id:'pp-longshort', label:'Long and short sounds',    re:/long sound|short sound/i },
+  { id:'pp-count',     label:'Counting sounds in a row', re:/two sounds|three sounds|one sound/i }
+];
+// The concepts one question tests: the value that was missing (the correct answer)
+// and its time signature. Picture questions (Pre-primary) are matched by prompt.
+function conceptsFor(q, yi){
+  if(YEARS[yi].id === 'PP'){
+    const hit = PP_CONCEPTS.find(c=>c.re.test(q.prompt || ''));
+    return [hit ? hit.id : 'pp-count'];
+  }
+  const answer = (q.options || []).find(o=>o.correct);
+  const ids = CONCEPTS.filter(c=>c.match((answer && answer.atoms) || [])).map(c=>c.id);
+  if(q.sig) ids.push('sig:' + q.sig);
+  return ids;
+}
+// What a year can actually ask about. Sampled from the generator with a fixed seed
+// so the list is stable, and cached: the panel must not change by itself.
+const yearConceptCache = new Map();
+function yearConceptIds(yi){
+  if(yearConceptCache.has(yi)) return yearConceptCache.get(yi);
+  const ids = new Set();
+  if(YEARS[yi].id === 'PP'){
+    PP_CONCEPTS.forEach(c=>ids.add(c.id));
+  } else {
+    const saved = seed;
+    seed = 90210 + yi * 104729;
+    for(let i=0; i<1500; i++) conceptsFor(makeQuestion(yi), yi).forEach(id=>ids.add(id));
+    seed = saved;
+  }
+  const list = [...ids];
+  yearConceptCache.set(yi, list);
+  return list;
+}
+// id -> {attempts, wrong} for a year: saved submissions plus this session's practice.
+function conceptTotals(yi){
+  const stats = new Map();
+  const bump = (id, wrong)=>{
+    const s = stats.get(id) || {attempts:0, wrong:0};
+    s.attempts++; if(wrong) s.wrong++;
+    stats.set(id, s);
+  };
+  const paper = makeTest(yi);   // deterministic per year, so saved indices still line up
+  loadRecords().filter(r=>r.yearIdx === yi).forEach(r=>{
+    paper.forEach((q,i)=>{
+      if(i < r.answers.length) conceptsFor(q, yi).forEach(id=>bump(id, r.wrong.indexOf(i) >= 0));
+    });
+  });
+  const live = state.conceptTally[yi] || {};
+  Object.keys(live).forEach(id=>{
+    const s = stats.get(id) || {attempts:0, wrong:0};
+    s.attempts += live[id].attempts; s.wrong += live[id].wrong;
+    stats.set(id, s);
+  });
+  return stats;
+}
+function recordConcepts(yi, q, wrong){
+  state.answeredByYear[yi] = (state.answeredByYear[yi] || 0) + 1;   // questions, not concepts
+  const bucket = state.conceptTally[yi] || (state.conceptTally[yi] = {});
+  conceptsFor(q, yi).forEach(id=>{
+    const s = bucket[id] || (bucket[id] = {attempts:0, wrong:0});
+    s.attempts++; if(wrong) s.wrong++;
+  });
+}
+const sigRank = s => { const p = s.split('/'); return (+p[1])*100 + (+p[0]); };
+function conceptRows(yi, stats){
+  const wanted = new Set(yearConceptIds(yi));
+  (stats || conceptTotals(yi)).forEach((_, id)=>wanted.add(id));   // never hide data we hold
+  const rows = [];
+  if(YEARS[yi].id === 'PP'){
+    PP_CONCEPTS.forEach(c=>{ if(wanted.has(c.id)) rows.push({id:c.id, label:c.label}); });
+    return rows;
+  }
+  CONCEPTS.forEach(c=>{ if(wanted.has(c.id)) rows.push({id:c.id, label:c.label}); });
+  [...wanted].filter(id=>id.indexOf('sig:') === 0).map(id=>id.slice(4))
+    .sort((a,b)=>sigRank(a)-sigRank(b))
+    .forEach(sig=>rows.push({id:'sig:'+sig, label:sig + ' time signature'}));
+  return rows;
+}
+function renderConceptBreakdown(){
+  const yi = state.yearIdx;
+  const stats = conceptTotals(yi);
+  const rows = conceptRows(yi, stats);
+  $('cmbList').innerHTML = rows.map(r=>{
+    const s = stats.get(r.id), n = s ? s.attempts : 0;
+    const pct = n ? Math.round(100 * s.wrong / n) : 0;
+    const cls = !n ? 'none' : pct >= 65 ? 'high' : pct >= 40 ? 'mid' : 'low';
+    const pctCls = !n ? '' : ' ' + cls;
+    const detail = n ? s.wrong + ' wrong of ' + n + ' answered' : 'not answered yet';
+    return '<div class="cmbrow" title="' + esc(r.label + ': ' + detail) + '">' +
+      '<div class="cmbhead"><span class="nm">' + esc(r.label) + '</span>' +
+      '<span class="cnt">' + (n || '') + '</span>' +
+      '<span class="pct' + pctCls + '">' + (n ? pct + '%' : '—') + '</span></div>' +
+      '<div class="cmbtrack"><div class="cmbfill ' + cls + '" style="width:' + (n ? Math.max(pct, 2) : 0) + '%"></div></div>' +
+    '</div>';
+  }).join('') || '<p class="tiny">Nothing to track for this year yet.</p>';
+  $('cmbAxis').style.display = rows.length ? 'flex' : 'none';
+  // Name the weakest concept as the next mini-lesson, once there is enough evidence.
+  let worst = null;
+  rows.forEach(r=>{
+    const s = stats.get(r.id);
+    if(!s || s.attempts < 3) return;
+    const rate = s.wrong / s.attempts;
+    if(rate > 0 && (!worst || rate > worst.rate)) worst = { label:r.label, rate, pct:Math.round(rate*100) };
+  });
+  // A question counts once here, even though it can touch several concepts above.
+  const tests = loadRecords().filter(r=>r.yearIdx === yi);
+  const testQs = tests.reduce((s,r)=>s + r.answers.length, 0);
+  const liveQs = state.answeredByYear[yi] || 0;
+  const answered = testQs + liveQs;
+  const sources = [];
+  if(testQs) sources.push(tests.length + ' saved test' + (tests.length === 1 ? '' : 's'));
+  if(liveQs) sources.push('practice');
+  $('cmbNote').innerHTML = answered
+    ? 'Across <b>' + answered + '</b> answered question' + (answered === 1 ? '' : 's') +
+      (sources.length ? ' (' + sources.join(' + ') + ')' : '') + '. ' +
+      (worst ? 'Next mini-lesson: <b>' + esc(worst.label) + '</b> at ' + worst.pct + '% wrong.'
+             : 'No concept stands out as a mini-lesson need yet.')
+    : 'No answers recorded for this year yet - the bars fill as questions are answered.';
 }
 
 /* ---------- note values reference guide ---------- */
@@ -1348,6 +1560,7 @@ function selectAnswer(i){
   const ok = i===correctIdx;
   state.total++;
   if(ok){ state.correct++; state.streak++; } else { state.streak=0; }
+  recordConcepts(state.yearIdx, q, !ok);   // feed the concept mastery breakdown
 
   const fb=$('feedback');
   fb.className='feedback show '+(ok?'ok':'no');
@@ -1388,6 +1601,7 @@ function updateStats(){
   $('statCorrect').textContent=state.correct;
   $('statTotal').textContent=state.total;
   $('statStreak').textContent=state.streak;
+  renderConceptBreakdown();
 }
 
 function renderKey(){
@@ -1623,6 +1837,7 @@ function saveRecord(){
   };
   const recs = loadRecords(); recs.push(rec); storeRecords(recs);
   renderRecords();
+  renderConceptBreakdown();   // the new submission counts towards the breakdown
 }
 
 /* ---------- CSV ---------- */

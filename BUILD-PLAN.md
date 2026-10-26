@@ -35,7 +35,7 @@ build step, no server, no internet.
 
 | Artifact | Status | Notes |
 | --- | --- | --- |
-| `rhythm-quiz-package/index.html` | Built, ~1,950 lines / ~87 KB | All content + logic. |
+| `rhythm-quiz-package/index.html` | Built, ~2,170 lines / ~98 KB | All content + logic. |
 | `rhythm-quiz-package/lib/vexflow.min.js` | Vendored | VexFlow 3.0.9, MIT, ~754 KB. |
 | `rhythm-quiz-package/lakeland-logo.svg` | Built | Navy school logo (header uses the inverse). |
 | `rhythm-quiz-package/lakeland-logo-inverse.svg` | Built | White/green/lime logo used in the header. |
@@ -200,12 +200,19 @@ answer-key row per year.
 ### Phase 6b — Delivered increments (post-release)
 **Deliverable:** the features shipped after the initial release, on `main`.
 
-- [x] **Note Values reference guide** (`§5`, `index.html` 1182–1401): a left column showing each
+- [x] **Note Values reference guide** (`index.html` 1394–1508): a left column showing each
       note value with its matching rest, fraction and 4/4 beats. Symbols drawn from VexFlow so
       the guide matches the questions, with the hand-drawn set as fallback. Only shown when the
       viewport fits all three columns (the options have a ~702 px floor). Fixed three
       rest-rendering bugs: dotted-rest dot placement, dotted-crotchet-rest glyph, and a missing
       semiquaver-rest glyph/`DUR`/`VEX_BASE` entry.
+- [x] **Concept Mastery Breakdown** (`index.html` 1234–1392): the far-left card, with the
+      Reference Guide beside it. Every answered question is tagged with the value that was
+      missing (its note, rest, tie or triplet) and its time signature, and the class's error
+      rate per concept is drawn as a bar (green / amber / red). Scoped to the selected year —
+      only concepts that year's questions can actually ask about appear — and aggregated from
+      the saved test records plus the current session's practice answers. The weakest concept
+      is named as the next mini-lesson.
 - [x] **Lakeland SHS branding**: inverse logo in the header, navy/green/lime palette
       (`#202B64` / `#0A8440` / `#C1D52D`), 4 px lime rule under the header; logos cropped from
       the A4 artwork and stripped of metadata; both colourways committed; the Pages workflow
@@ -233,6 +240,7 @@ site; Sheet submit appends a row when configured; offline CSV path unaffected.
 - [ ] Package, standalone and zip all present and working offline.
 - [ ] Invariant assertions pass; console clean.
 - [ ] Note Values reference guide matches the quiz notation and shows each rest correctly.
+- [ ] Concept Mastery Breakdown sits on the far left, scopes to the year, and names a mini-lesson.
 - [ ] Lakeland SHS inverse logo in the header; navy/green/lime palette.
 - [ ] (Optional) Google Sheet submit appends a row; offline CSV path still works.
 

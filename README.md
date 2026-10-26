@@ -17,7 +17,7 @@ An interactive music quiz built from the **Western Australian Curriculum: The Ar
 
 ```
 rhythm-quiz-package/
-├── index.html          the quiz (content + logic, ~87 KB)
+├── index.html          the quiz (content + logic, ~98 KB)
 ├── lib/
 │   └── vexflow.min.js  music notation engine (VexFlow 3.0.9, MIT)
 ├── lakeland-logo.svg           school logo (navy; print/other use)
@@ -35,6 +35,7 @@ Open `rhythm-quiz-package/index.html` (or `rhythm-quiz-standalone.html`) in any 
 - Read the **time signature** and work out how many beats the dashed **?** box needs.
 - Choose the option whose note values add up to exactly that amount.
 - Keys `1`–`4` answer, `Enter` goes next. The **Answer key** panel records answers for the teacher.
+- The **Concept Mastery Breakdown** sits on the far left, with the Reference Guide beside it: a live error rate per note value, rest, tie and time signature for the selected year, naming the weakest concept as the next mini-lesson.
 
 ### 10-question tests + CSV
 Each year group also has a **fixed 10-question test** (button: *Start 10-question test*). Students sign in with their school Google account — their name is recorded from the account, so there is nothing to type — answer all 10, then see their score and a review table showing **Question | Your answer | Correct answer | ✓/✗**. The result is submitted to the class Google Sheet automatically, and **Exit** closes the test once it has been sent. Each attempt is also kept in the browser's class list, exportable as a CSV with the **correct answers on top** and each **student's responses underneath**, wrong answers marked.
