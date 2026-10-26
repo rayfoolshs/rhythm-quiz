@@ -25,7 +25,7 @@ build step, no server, no internet.
 | --- | --- |
 | Runs from `file://` by double-click | No ES modules, no `fetch()` of local data, no bundler. Everything inline or via relative `<script src>`. |
 | No internet | VexFlow must be vendored locally (`lib/vexflow.min.js`). |
-| No build step | `index.html` is the source of truth; standalone + zip are generated from it. |
+| No build step | `index.html` is the source of truth; the standalone file is generated from it. |
 | One answer must be unambiguous | Every question option must have a **unique** total duration. |
 | Results must survive a page reload | `localStorage` is the only durable store available. |
 
@@ -35,14 +35,14 @@ build step, no server, no internet.
 
 | Artifact | Status | Notes |
 | --- | --- | --- |
-| `rhythm-quiz-package/index.html` | Built, ~2,325 lines / ~107 KB | All content + logic. |
+| `rhythm-quiz-package/index.html` | Built, ~2,330 lines / ~107 KB | All content + logic. |
 | `rhythm-quiz-package/lib/vexflow.min.js` | Vendored | VexFlow 3.0.9, MIT, ~754 KB. |
 | `rhythm-quiz-package/lakeland-logo.svg` | Built | Navy school logo (header uses the inverse). |
 | `rhythm-quiz-package/lakeland-logo-inverse.svg` | Built | White/green/lime logo used in the header. |
 | `rhythm-quiz-package/README.md` | Built | Teacher-facing instructions. |
 | `rhythm-quiz-package/LICENSES.md` | Built | VexFlow MIT + SCSA attribution. |
 | `rhythm-quiz-standalone.html` | Built | Same quiz, VexFlow + logo inlined. |
-| `rhythm-quiz-package.zip` | Built | Clean zip for sharing. |
+| `rhythm-quiz-package.zip` | **Withdrawn** | No zip is committed or attached to releases; make one locally if you need to email the package. |
 | `Code.gs` | Built | Apps Script backend for the optional Sheet submit. |
 | `GOOGLE-SHEET-SUBMIT.md` | Built | Deployment guide for the Sheet submit. |
 | `.github/workflows/pages.yml` | Built | Publishes the package to GitHub Pages. |
@@ -188,32 +188,32 @@ exactly one correct option. No duplicate-duration options.
 answer-key row per year.
 
 ### Phase 6 — Packaging & release
-**Deliverable:** the three shareable artifacts.
-- [ ] Generate `rhythm-quiz-standalone.html` by inlining VexFlow from the package `index.html`.
-- [ ] Generate `rhythm-quiz-package.zip` cleanly (strip `__MACOSX`/resource forks).
+**Deliverable:** the shareable artifacts.
+- [x] Generate `rhythm-quiz-standalone.html` by inlining VexFlow from the package `index.html`.
+- [ ] ~~Generate `rhythm-quiz-package.zip`~~ — dropped: no zip is shipped (see the audit row above).
 - [ ] Re-run the §1 invariant assertions; check the browser console is clean.
 - [ ] Update both READMEs if behaviour changed.
-- [ ] **Regenerate standalone + zip after every future change** (make this a rule).
+- [ ] **Regenerate the standalone file after every future change**, and bump the header version badge before tagging (make this a rule).
 
-**Exit test:** all three artifacts work offline from a clean machine; acceptance checklist passes.
+**Exit test:** the package and standalone file work offline from a clean machine; acceptance checklist passes.
 
 ### Phase 6b — Delivered increments (post-release)
 **Deliverable:** the features shipped after the initial release, on `main`.
 
-- [x] **Note Values reference guide** (`index.html` 1531–1645): a left column showing each
+- [x] **Note Values reference guide** (`index.html` 1538–1652): a left column showing each
       note value with its matching rest, fraction and 4/4 beats. Symbols drawn from VexFlow so
       the guide matches the questions, with the hand-drawn set as fallback. Only shown when the
       viewport fits all three columns (the options have a ~702 px floor). Fixed three
       rest-rendering bugs: dotted-rest dot placement, dotted-crotchet-rest glyph, and a missing
       semiquaver-rest glyph/`DUR`/`VEX_BASE` entry.
-- [x] **Concept Mastery Breakdown** (`index.html` 1286–1470): the far-left card, with the
+- [x] **Concept Mastery Breakdown** (`index.html` 1293–1477): the far-left card, with the
       Reference Guide beside it. Every answered question is tagged with the value that was
       missing (its note, rest, tie or triplet) and its time signature, and the class's error
       rate per concept is drawn as a bar (green / amber / red). Scoped to the selected year —
       only concepts that year's questions can actually ask about appear — and aggregated from
       the saved test records plus the current session's practice answers. The weakest concept
       is named as the next mini-lesson.
-- [x] **Live numeracy diagnostic** (`index.html` 1472–1529): the right column's first card, above
+- [x] **Live numeracy diagnostic** (`index.html` 1479–1536): the right column's first card, above
       the Score, titled *Visualising the Numeracy Diagnostic Live*. Re-reads the same per-concept
       tally as the breakdown as four numeracy skills — decimal/fraction pacing (a fractional beat),
       denominator anchoring (questions carrying a time signature), missing addends (every question)
@@ -222,6 +222,12 @@ answer-key row per year.
       cannot ask about are hidden, and the weakest one is named as the next numeracy focus. A
       **Numeracy Diagnostic Live** switch at the end of the year bar (after Year 10) shows or
       collapses the card, and the choice is remembered in `localStorage`.
+- [x] **Release version in the header**: a `vX.Y.Z` badge beside the title (`.ver` in `index.html` and
+      the standalone copy), so a teacher can see which build is open. It must be bumped with every
+      release (SECURITY.md §8), otherwise the badge and the git tag disagree.
+- [x] **Zip withdrawn**: the `rhythm-quiz-package.zip` release assets were deleted from `v1.3.0`,
+      `v1.3.1` and `v1.4.0`, and no zip is committed (`index.html` is the source of truth; make an
+      archive locally if you need to email the package).
 - [x] **Lakeland SHS branding**: inverse logo in the header, navy/green/lime palette
       (`#202B64` / `#0A8440` / `#C1D52D`), 4 px lime rule under the header; logos cropped from
       the A4 artwork and stripped of metadata; both colourways committed; the Pages workflow
@@ -246,9 +252,10 @@ site; Sheet submit appends a row when configured; offline CSV path unaffected.
 - [ ] Each year has a stable 10-question test with a Google sign-in gate and no name field.
 - [ ] Results table is `Q | Question | Your answer | Correct answer | ✓/✗`.
 - [ ] CSV header/order correct, answer-key row on top, ✗ marks + Wrong list, appends.
-- [ ] Package, standalone and zip all present and working offline.
+- [ ] Package and standalone file both present and working offline.
 - [ ] Invariant assertions pass; console clean.
 - [ ] Note Values reference guide matches the quiz notation and shows each rest correctly.
+- [ ] Header shows the release version, matching the latest git tag.
 - [ ] Concept Mastery Breakdown sits on the far left, scopes to the year, and names a mini-lesson.
 - [ ] Numeracy diagnostic sits above the Score, maps the same answers to four skills, hides skills the year cannot ask about, and the year-bar switch shows/collapses it.
 - [ ] Lakeland SHS inverse logo in the header; navy/green/lime palette.
@@ -263,7 +270,7 @@ site; Sheet submit appends a row when configured; offline CSV path unaffected.
 | Two options accidentally equal duration → two "correct" answers | Assert unique durations in the generator; fail loudly. |
 | Float drift when summing dotted values | Compare in exact fractions / rounded crotchet beats. |
 | Side panel not updating on year change | Explicit re-render in the year-tab handler; covered by exit test. |
-| Standalone/zip drifting from package | Always regenerate both from `index.html`; treat as build output. |
+| Standalone drifting from package | Always regenerate it from `index.html`; treat it as build output. |
 | VexFlow API differences (e.g. `strokeRect` absent on SVGContext) | Use `beginPath/rect/stroke`; keep the SVG fallback path. |
 | `localStorage` cleared / different browser → "lost" results | Document it; CSV download is the durable copy; consider export/import JSON (Phase 7). |
 | Very long bars overflow on phones | `overflow-x:auto` on `.barwrap`; responsive grid collapses at 820px/560px. |
@@ -309,7 +316,6 @@ Ordered by value-to-effort; each is an independent, shippable increment.
 ```
 Open  rhythm-quiz-package/index.html        (primary package)
 Open  rhythm-quiz-standalone.html           (single-file)
-Unzip rhythm-quiz-package.zip               (share copy)
 ```
 
 The live copy is published to GitHub Pages from `main`:

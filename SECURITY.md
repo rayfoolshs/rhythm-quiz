@@ -285,7 +285,7 @@ Verify sign-in, notation rendering and submission afterwards. GitHub Pages canno
 
 ### Housekeeping
 
-- `rhythm-quiz-package.zip` is gitignored **by design** and published as a release asset instead (`v1.4.0`). Regenerate with `git archive --format=zip -o rhythm-quiz-package.zip HEAD rhythm-quiz-package` and attach it to the next release.
+- No zip is committed, and none is attached to releases: the withdrawn `rhythm-quiz-package.zip` assets were removed from `v1.3.0`, `v1.3.1` and `v1.4.0`. The name stays in `.gitignore` so a locally made archive is never committed. To share the package by email, zip the folder yourself (`git archive --format=zip -o rhythm-quiz-package.zip HEAD rhythm-quiz-package` or `Compress-Archive rhythm-quiz-package rhythm-quiz-package.zip`).
 - No `favicon.ico` (404 on every visit) — cosmetic.
 
 ---
@@ -314,16 +314,24 @@ git push origin HEAD:main      # Pages builds and deploys on push to main
 Verify the deployed file is the one you just committed:
 
 ```bash
-curl -s https://rayfoolshs.github.io/rhythm-quiz/ | diff - rhythm-quiz-package/index.html && echo "live == committed"
+# A Windows checkout stores CRLF while Pages serves LF, so normalise line endings
+# before comparing - a plain diff reports every line as different.
+curl -s https://rayfoolshs.github.io/rhythm-quiz/ | tr -d '\r' | diff - <(tr -d '\r' < rhythm-quiz-package/index.html) && echo "live == committed"
 gh run list -R rayfoolshs/rhythm-quiz -L 1
 ```
 
-When the package itself changes, also publish a release (the zip is not in the repo):
+When the front end changes, tag a release. **Bump the version in two places first** — the header badge
+in `rhythm-quiz-package/index.html` (and its `rhythm-quiz-standalone.html` copy) — then tag, so the
+badge never disagrees with the tag:
 
 ```bash
-git archive --format=zip -o rhythm-quiz-package.zip HEAD rhythm-quiz-package
-gh release create vX.Y.Z ./rhythm-quiz-package.zip --target main --notes-file notes.md
+# 1. bump <span class="ver">vX.Y.Z</span> in both HTML files, commit and push
+# 2. tag and release (no zip asset: none is shipped)
+git tag -a vX.Y.Z -m "vX.Y.Z: ..." && git push origin vX.Y.Z
+gh release create vX.Y.Z --title "vX.Y.Z - ..." --notes-file notes.md
 ```
+
+Semver in use so far: minor (`v1.3.0`, `v1.4.0`) for features, patch (`v1.3.1`) for fixes.
 
 **Rollback:** keep the previous `Code.gs`; redeploy it as a new version. The `/exec` URL does not change. For the front end, revert the commit on `main`; Pages redeploys automatically.
 

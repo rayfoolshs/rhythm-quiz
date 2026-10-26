@@ -43,6 +43,13 @@
   @media (max-width:560px){ .brandlogo{height:54px} }
   header h1{margin:0 0 4px; font-size:1.35rem; letter-spacing:.2px}
   header p{margin:0; opacity:.85; font-size:.85rem}
+  /* Release version, shown beside the title. Bump this with every release
+     (see SECURITY.md §8) so the header never disagrees with the git tag. */
+  .ver{
+    display:inline-block; vertical-align:.08em; margin-left:7px; padding:1px 8px; border-radius:999px;
+    background:rgba(255,255,255,.16); border:1px solid rgba(255,255,255,.34);
+    font-size:.68rem; font-weight:700; letter-spacing:.05em; color:#fff;
+  }
   .wrap{max-width:1400px; margin:0 auto; padding:0 16px}
   .yearbar{
     position:sticky; top:0; z-index:20; background:#fff; border-bottom:1px solid var(--line);
@@ -256,7 +263,7 @@
   <div class="wrap">
     <img class="brandlogo" src="lakeland-logo-inverse.svg" alt="Lakeland Senior High School" width="90" height="74">
     <div>
-      <h1>Rhythm Quiz — Complete the Bar</h1>
+      <h1>Rhythm Quiz — Complete the Bar <span class="ver">v1.4.1</span></h1>
       <p>Based on the WA Curriculum: The Arts — Music, Scope &amp; Sequence (Pre-primary–Year 10) Addendum. Choose the rhythm that completes the bar.</p>
     </div>
   </div>

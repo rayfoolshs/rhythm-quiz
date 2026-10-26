@@ -4,6 +4,8 @@ An interactive music quiz built from the **Western Australian Curriculum: The Ar
 
 Students choose the rhythm that makes the bar add up to the time signature.
 
+The release version is shown in a badge beside the title in the page header (for example `v1.4.1`), so you can tell at a glance which build is open.
+
 ## Open it
 Open **`index.html`** in any modern browser (double-click it, or drag it into a browser window).
 No install, no build step, no internet connection required.

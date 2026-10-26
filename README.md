@@ -10,7 +10,6 @@ An interactive music quiz built from the **Western Australian Curriculum: The Ar
 | Item | Description |
 | --- | --- |
 | `rhythm-quiz-package/` | **The package.** Open `index.html`. Small HTML plus the notation engine in `lib/`. |
-| `rhythm-quiz-package.zip` | The same package zipped for sharing or emailing — attached to every [release](https://github.com/rayfoolshs/rhythm-quiz/releases/latest). |
 | `rhythm-quiz-standalone.html` | Optional single file — the whole quiz and engine in one HTML. Larger, but nothing else needed. |
 
 ### Package structure
@@ -44,6 +43,8 @@ Each year group also has a **fixed 10-question test** (button: *Start 10-questio
 See `rhythm-quiz-package/README.md` for the full year-by-year content breakdown.
 
 ## Notes
+- The release version is shown beside the title in the page header, so it is easy to tell which build is open.
+- No zip is shipped: to email the package, zip the `rhythm-quiz-package/` folder yourself (`Compress-Archive` on Windows, `zip -r` elsewhere). It is gitignored, so an archive you make stays local.
 - Notation is vector SVG (via VexFlow), so it stays sharp at any size and prints cleanly.
 - The double-clicked offline copy cannot sign in to Google, so it labels its rows `(offline)` in the CSV. Named, sheet-submitted results need the hosted version.
 - Time signatures used: 2/4, 3/4, 4/4, 5/4, 6/8, 7/8, 9/8, 12/8.

@@ -1,7 +1,8 @@
 # macOS
 .DS_Store
 
-# Build artifact (regenerate with: zip -rX rhythm-quiz-package.zip rhythm-quiz-package)
+# Local sharing archive, if you make one (zip -rX rhythm-quiz-package.zip rhythm-quiz-package).
+# Not shipped: no zip is committed or attached to releases.
 rhythm-quiz-package.zip
 
 # Keep the standalone file (it is a shipped single-file deliverable),
