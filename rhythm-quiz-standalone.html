@@ -56,6 +56,22 @@
   }
   .tab:hover{border-color:var(--brand2); color:var(--brand)}
   .tab.active{background:var(--brand); border-color:var(--brand); color:#fff}
+  .yearbar .tabs{display:flex; gap:6px}
+  /* Toggle switch for the numeracy diagnostic, sitting after the Year 10 tab */
+  .switch{
+    flex:0 0 auto; display:flex; align-items:center; gap:8px; margin-left:10px; cursor:pointer;
+    border:1px solid var(--line); background:#fff; border-radius:999px; padding:5px 12px 5px 7px;
+    font-size:.82rem; font-weight:600; color:var(--muted); white-space:nowrap; transition:.15s;
+  }
+  .switch:hover{border-color:var(--brand2); color:var(--brand)}
+  .switch .track{position:relative; flex:0 0 auto; width:34px; height:18px; border-radius:999px; background:#cfd5e6; transition:background .15s}
+  .switch .knob{
+    position:absolute; top:2px; left:2px; width:14px; height:14px; border-radius:50%; background:#fff;
+    box-shadow:0 1px 2px rgba(20,10,60,.3); transition:left .15s;
+  }
+  .switch[aria-checked="true"]{color:var(--brand); border-color:#c9d2ea}
+  .switch[aria-checked="true"] .track{background:var(--teal)}
+  .switch[aria-checked="true"] .knob{left:18px}
   main{padding:18px 0 60px}
   /* guide (left) | quiz | score & results (right)
      NB: the quiz column keeps its automatic minimum, because the answer
@@ -246,7 +262,13 @@
   </div>
 </header>
 
-<nav class="yearbar"><div class="wrap" id="tabs"></div></nav>
+<nav class="yearbar"><div class="wrap">
+  <div class="tabs" id="tabs"></div>
+  <button class="switch" id="numSwitch" type="button" role="switch" aria-checked="true" aria-controls="numCard">
+    <span class="track"><span class="knob"></span></span>
+    <span class="lbl">Numeracy Diagnostic Live</span>
+  </button>
+</div></nav>
 
 <main class="wrap">
   <div class="grid">
@@ -309,7 +331,7 @@
 
     <!-- SIDE -->
     <aside>
-      <div class="card">
+      <div class="card" id="numCard">
         <h2>Visualising the Numeracy Diagnostic Live</h2>
         <p class="tiny">Class mastery rate per numeracy skill, read from the same answers as the Concept Mastery Breakdown. A short red bar is the next numeracy focus.</p>
         <div id="nmbList"></div>
@@ -1730,6 +1752,24 @@ function renderKey(){
   html+='</table>';
   $('keyList').innerHTML=html;
 }
+
+/* ---------- numeracy panel toggle (year bar, after Year 10) ---------- */
+// The switch shows or collapses the numeracy diagnostic; the choice is remembered
+// in this browser so a teacher only sets it once.
+const NUM_KEY = 'rq_numeracy_open';
+let numOpen = true;
+try{ const v = localStorage.getItem(NUM_KEY); if(v !== null) numOpen = (v === '1'); }catch(e){}
+function applyNumeracyVisibility(){
+  $('numCard').style.display = numOpen ? '' : 'none';
+  $('numSwitch').setAttribute('aria-checked', numOpen ? 'true' : 'false');
+}
+$('numSwitch').onclick = ()=>{
+  numOpen = !numOpen;
+  try{ localStorage.setItem(NUM_KEY, numOpen ? '1' : '0'); }catch(e){}
+  applyNumeracyVisibility();
+  if(numOpen) renderNumeracy();   // catch up on anything answered while collapsed
+};
+applyNumeracyVisibility();
 
 /* ---------- events ---------- */
 $('nextBtn').onclick = ()=>{ newQuestion(); };
