@@ -3,7 +3,7 @@
 **Site:** https://rayfoolshs.github.io/rhythm-quiz/
 **Repo:** https://github.com/rayfoolshs/rhythm-quiz
 **Reviewed:** 25 October 2026
-**Status:** 🟢 Front end deployed and live (`v1.4.1`) — `Code.gs` still needs a manual redeploy in the Apps Script editor (§8)
+**Status:** 🟢 Front end deployed and live (`v1.5.0`) — `Code.gs` still needs a manual redeploy in the Apps Script editor (§8)
 
 ---
 
@@ -27,7 +27,7 @@
 | **L4** | Student name/score placed in URL query string | 🟡 Medium | ⚠️ Documented, open |
 | **L9** | **Access token sent as a query parameter on the profile-lookup retry** | 🟡 Medium | ⚠️ Accepted, documented (§4.2) |
 
-> **Deployment state (26 Oct 2026).** The front end is live and matches release `v1.4.1`: the Pages workflow run for that code succeeded (`1889689`, build and deploy both green), and the served `index.html` is byte-identical to the committed `rhythm-quiz-package/index.html` (compared with LF-normalised SHA-256, since the Windows checkout stores CRLF). `Code.gs` is **not** deployed by the Pages workflow — it must still be pasted into the Apps Script editor and **redeployed as a new version** (§8), then confirmed with one real row.
+> **Deployment state (26 Oct 2026).** The front end is live and matches release `v1.5.0`: the Pages workflow run for that code succeeded (`4650332`, run `40299841628`; build and deploy both green), and the served `index.html` is byte-identical to the committed `rhythm-quiz-package/index.html` (compared with LF-normalised SHA-256, since the Windows checkout stores CRLF). `Code.gs` is **not** deployed by the Pages workflow — it must still be pasted into the Apps Script editor and **redeployed as a new version** (§8), then confirmed with one real row.
 
 ---
 
