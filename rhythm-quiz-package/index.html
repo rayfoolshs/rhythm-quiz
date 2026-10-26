@@ -55,7 +55,9 @@
     position:sticky; top:0; z-index:20; background:#fff; border-bottom:1px solid var(--line);
     box-shadow:0 2px 10px rgba(30,20,80,.05);
   }
-  .yearbar .wrap{display:flex; gap:6px; overflow-x:auto; padding:10px 16px}
+  /* The year tabs scroll on their own row; the two panel switches sit on a
+     second row so both labels stay fully readable at every width. */
+  .yearbar .wrap{display:flex; flex-wrap:wrap; gap:6px; overflow-x:auto; padding:10px 16px}
   .tab{
     flex:0 0 auto; border:1px solid var(--line); background:#fff; color:var(--muted);
     padding:7px 12px; border-radius:999px; font-size:.82rem; font-weight:600; cursor:pointer;
@@ -64,9 +66,10 @@
   .tab:hover{border-color:var(--brand2); color:var(--brand)}
   .tab.active{background:var(--brand); border-color:var(--brand); color:#fff}
   .yearbar .tabs{display:flex; gap:6px}
-  /* Toggle switch for the year-bar panels, sitting after the Year 10 tab */
+  .panelswitches{flex:1 0 100%; display:flex; flex-wrap:wrap; align-items:center; gap:8px}
+  /* Toggle switch for the year-bar panels */
   .switch{
-    flex:0 0 auto; display:flex; align-items:center; gap:8px; margin-left:10px; cursor:pointer;
+    flex:0 0 auto; display:flex; align-items:center; gap:8px; cursor:pointer;
     border:1px solid var(--line); background:#fff; border-radius:999px; padding:5px 12px 5px 7px;
     font-size:.82rem; font-weight:600; color:var(--muted); white-space:nowrap; transition:.15s;
   }
@@ -265,7 +268,7 @@
   <div class="wrap">
     <img class="brandlogo" src="lakeland-logo-inverse.svg" alt="Lakeland Senior High School" width="90" height="74">
     <div>
-      <h1>Rhythm Quiz — Complete the Bar <span class="ver">v1.5.0</span></h1>
+      <h1>Rhythm Quiz — Complete the Bar <span class="ver">v1.5.1</span></h1>
       <p>Based on the WA Curriculum: The Arts — Music, Scope &amp; Sequence (Pre-primary–Year 10) Addendum. Choose the rhythm that completes the bar.</p>
     </div>
   </div>
@@ -273,14 +276,16 @@
 
 <nav class="yearbar"><div class="wrap">
   <div class="tabs" id="tabs"></div>
-  <button class="switch" id="cmbSwitch" type="button" role="switch" aria-checked="false" aria-controls="cmbCard">
-    <span class="track"><span class="knob"></span></span>
-    <span class="lbl">Concept Mastery Breakdown</span>
-  </button>
-  <button class="switch" id="numSwitch" type="button" role="switch" aria-checked="false" aria-controls="numCard">
-    <span class="track"><span class="knob"></span></span>
-    <span class="lbl">Numeracy Diagnostic Live</span>
-  </button>
+  <div class="panelswitches">
+    <button class="switch" id="cmbSwitch" type="button" role="switch" aria-checked="false" aria-controls="cmbCard">
+      <span class="track"><span class="knob"></span></span>
+      <span class="lbl">Concept Mastery Breakdown</span>
+    </button>
+    <button class="switch" id="numSwitch" type="button" role="switch" aria-checked="false" aria-controls="numCard">
+      <span class="track"><span class="knob"></span></span>
+      <span class="lbl">Numeracy Diagnostic Live</span>
+    </button>
+  </div>
 </div></nav>
 
 <main class="wrap">
